@@ -11,7 +11,9 @@
 }
 
 /* Base and Reset */
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -36,11 +38,13 @@ body {
   max-width: 1100px;
   margin: 0 auto;
   background: #fff;
-  overflow: hidden;
+  /* allow visible overflow on small screens (avoid clipped content) */
+  overflow: visible;
   box-shadow: var(--shadow);
+  padding-bottom: 40px;
 }
 
-/* Nueva Barra de Navegación */
+/* Navbar */
 .navbar {
   display: flex;
   justify-content: space-between;
@@ -119,18 +123,22 @@ body {
 }
 
 .banner-slide {
-  max-height: 355px;
   min-width: 100%;
+  max-height: 355px;
+  overflow: hidden;
 }
 
 .banner-slide img {
   width: 100%;
   height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
+/* Banner dots */
 .banner-dots {
   position: absolute;
-  bottom: 93%;
+  bottom: 12px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -152,7 +160,7 @@ body {
   background: var(--primary);
 }
 
-/* ESTILOS DE MODAL */
+/* Modals */
 .modal {
   display: none;
   position: fixed;
@@ -168,9 +176,11 @@ body {
 
 .modal-content-wrapper {
   width: 100%;
+  max-width: 960px;
   display: flex;
   justify-content: center;
-  height: 480px;
+  align-items: center;
+  height: auto;
 }
 
 .modal-card,
@@ -183,13 +193,7 @@ body {
   padding: 18px;
   box-shadow: var(--shadow);
   position: relative;
-}
-
-.modal-card {
-  padding: 0;
-  height: 120%;
-  max-width: 100%;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* Categories Carousel */
@@ -236,38 +240,14 @@ body {
 }
 
 /* Product Sections and Grid */
-.menu-section {
-  padding: 10px 0 20px;
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  text-align: center;
-  color: var(--primary);
-  font-size: 1.2rem;
-  margin: 1rem 0;
-}
-
-.section-title::before {
-  content: '';
-  flex: 1;
-  border-bottom: 2px solid #ddd;
-  margin-right: 1rem;
-}
-
-.section-title::after {
-  content: '';
-  flex: 1;
-  border-bottom: 2px solid #ddd;
-  margin-left: 1rem;
-}
-
+/* Use auto-fill/minmax to make grid responsive automatically */
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   grid-auto-rows: auto;
   gap: 10px;
+  align-items: start;
+  width: 100%;
 }
 
 /* Product Card */
@@ -279,31 +259,46 @@ body {
   display: flex;
   flex-direction: column;
   cursor: default;
+  min-width: 0; /* allows children to shrink properly */
+  position: relative;
 }
 
+/* Make images responsive using aspect-ratio so cards keep consistent height */
 .product-image {
   width: 100%;
-  height: 160px;
+  height: auto;
+  aspect-ratio: 4/3; /* modern browsers will respect this */
   object-fit: cover;
+  display: block;
   cursor: pointer;
+  /* Fallback for browsers that don't support aspect-ratio */
+  max-height: 220px;
 }
+
+/* If you have an image wrapper, prefer to set aspect on wrapper:
+.product-image-wrapper { aspect-ratio: 4/3; overflow: hidden; }
+.product-image-wrapper img { width:100%; height:100%; object-fit:cover; }
+*/
 
 .product-info {
   padding: 10px;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-height: 0; /* prevents flex overflow issues */
 }
 
 .product-name {
   color: var(--primary);
   font-size: 0.98rem;
+  word-break: break-word;
 }
 
 .product-description {
   font-size: .86rem;
   color: #666;
   flex: 1;
+  word-break: break-word;
 }
 
 .product-price {
@@ -312,6 +307,17 @@ body {
   font-size: 1rem;
 }
 
+/* Ensure actions sit at bottom of the card and wrap on small widths */
+.product-card .actions,
+.product-card .card-actions {
+  margin-top: auto;
+  padding: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Modal close */
 .modal-close {
   position: absolute;
   top: 1px;
@@ -324,7 +330,7 @@ body {
   z-index: 20;
 }
 
-/* Carousel Modal*/
+/* Carousel Modal */
 .carousel-container {
   position: relative;
   width: 100%;
@@ -359,13 +365,8 @@ body {
   z-index: 6;
 }
 
-.prev-btn {
-  left: 10px;
-}
-
-.next-btn {
-  right: 10px;
-}
+.prev-btn { left: 10px; }
+.next-btn { right: 10px; }
 
 .modal-caption {
   padding: 14px;
@@ -458,128 +459,91 @@ body {
   color: #fff;
 }
 
-/* Responsive Design */
-@media (max-width: 700px) {
-  .product-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .carousel-container {
-    height: 380px;
-  }
-
-  .logo {
-    font-size: 1.5rem;
-  }
-
-  #search-input {
-    padding: 10px 14px;
-    font-size: 0.8rem;
-  }
-
-  .nav-cart-btn {
-    font-size: 1.4rem;
-  }
-}
-
-@media (max-width: 420px) {
-  .product-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .category-image {
-    width: 76px;
-    height: 76px;
-  }
-
-  .carousel-container {
-    background: var(--card-bg);
-    height: 256px;
-  }
-
-  .logo {
-    display: none;
-  }
-}
-
-/* PWA Install Banner */
-.install-banner {
-  position: fixed;
-  bottom: 0;
-  left: 0;
+/* Ticker */
+.ticker-wrapper {
   width: 100%;
+  overflow: hidden;
   background-color: var(--primary);
   color: #fff;
-  padding: 15px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);
-  z-index: 1000;
-  transition: transform 0.3s ease-in-out;
-  transform: translateY(100%);
+  padding: 3px 0;
+  white-space: nowrap;
 }
 
-.install-banner.visible {
+.ticker-text {
+  display: inline-block;
+  animation: ticker-scroll 60s linear infinite;
+}
+
+.ticker-text span {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-right: 1.2rem;
+}
+
+@keyframes ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-30%); }
+}
+
+/* Ads Section */
+.ads-section { padding: 1rem; }
+
+.ads-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.ad-image {
+  width: 100%;
+  aspect-ratio: 1/1;
+  border-radius: 20px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease;
+}
+
+.ad-image:hover { transform: scale(1.05); }
+
+/* Out of stock */
+.product-card.out-of-stock {
+  opacity: 0.5;
+  position: relative;
+  pointer-events: none;
+}
+
+.out-of-stock-overlay {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 0, 0, 0.8);
+  color: #fff;
+  font-weight: bold;
+  padding: 6px 12px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+/* Success modal style */
+.success-modal-card {
+  position: relative;
+  background: var(--card-bg);
+  padding: 1rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  max-width: 100%;
+  width: 500px;
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
   transform: translateY(0);
 }
 
-.install-banner span {
-  font-size: 1rem;
-  font-weight: 500;
-}
-
-.install-banner div {
-  display: flex;
-  gap: 10px;
-}
-
-.install-banner button {
-  padding: 8px 15px;
-  border-radius: 14px;
-  border: 1px solid #fff;
-  background: transparent;
-  color: #fff;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.install-banner button:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-}
-
-.install-banner .install-btn {
-  background-color: var(--accent);
-  color: var(--primary);
-  border-color: var(--accent);
-}
-
-/* Checkout Modal */
-.checkout-modal-card h2 {
-  text-align: center;
-  margin-bottom: 1rem;
-  color: var(--primary);
-}
-
-.form-group {
-  margin-bottom: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.form-group label {
-  font-size: 0.9rem;
-  color: #333;
-}
-
-.form-group input {
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 0.95rem;
-}
+.success-modal-card h2 { color: var(--primary); margin-bottom: 0.5rem; }
+.success-modal-card p { color: var(--text); margin-bottom: 0.5rem; }
+.success-modal-card .checkout-btn,
+.success-modal-card .add-to-cart-btn { margin-top: 1rem; }
 
 /* Pagination */
 #pagination-container {
@@ -602,11 +566,7 @@ body {
   min-width: 40px;
 }
 
-.pagination-btn:hover {
-  background: var(--secondary);
-  color: #fff;
-}
-
+.pagination-btn:hover { background: var(--secondary); color: #fff; }
 .pagination-btn.active {
   background: var(--accent);
   border-color: var(--accent);
@@ -614,10 +574,8 @@ body {
   font-weight: 700;
 }
 
-/* Nuevo estilo para la etiqueta "Lo más vendido" */
-.product-card {
-  position: relative;
-}
+/* Best seller tag */
+.product-card { position: relative; }
 
 .best-seller-tag {
   position: absolute;
@@ -634,120 +592,89 @@ body {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-/* Estilos para la Cinta de Texto en Movimiento */
-.ticker-wrapper {
-  width: 100%;
-  overflow: hidden;
-  background-color: var(--primary);
-  color: #fff;
-  padding: 3px 0;
-  white-space: nowrap;
+/* Responsive breakpoints */
+/* Desktop-ish / default handled by auto-fill grid */
+@media (max-width: 900px) {
+  .page-container { padding: 0 12px; }
+  .ads-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
-.ticker-text {
-  display: inline-block;
-  animation: ticker-scroll 60s linear infinite;
-}
-
-.ticker-text span {
-  font-size: 0.9rem;
-  font-weight: 600;
-  margin-right: 1.2rem;
-}
-
-/* Animación que mueve el texto */
-@keyframes ticker-scroll {
-  0% {
-    transform: translateX(0);
+@media (max-width: 700px) {
+  /* reduce the minimum column size so grid collapses to 2/1 columns naturally */
+  .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
   }
 
-  100% {
-    transform: translateX(-30%);
-  }
-}
-
-/* Ads Section */
-.ads-section {
-  padding: 1rem;
-}
-
-.ads-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-}
-
-.ad-image {
-  width: 100%;
-  aspect-ratio: 1/1;
-  border-radius: 20px;
-  cursor: pointer;
-  box-shadow: var(--shadow);
-  transition: transform 0.2s ease;
-}
-
-.ad-image:hover {
-  transform: scale(1.05);
-}
-
-@media (max-width: 768px) {
-  .ads-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  .carousel-container { height: 300px; }
+  .logo { font-size: 1.5rem; }
+  #search-input { padding: 10px 14px; font-size: 0.85rem; }
+  .nav-cart-btn { font-size: 1.4rem; }
+  .ads-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 480px) {
-  .ads-grid {
+  /* one column on small phones */
+  .product-grid {
     grid-template-columns: 1fr;
+    gap: 10px;
   }
+
+  .category-image { width: 64px; height: 64px; }
+  .carousel-container { height: 240px; background: var(--card-bg); }
+  .logo { display: none; }
+  .search-container { margin: 0 .5rem; max-width: none; }
+  .page-container { padding: 0 8px; }
+  .ads-grid { grid-template-columns: 1fr; }
 }
 
-/* Estado agotado */
-.product-card.out-of-stock {
-  opacity: 0.5;
-  position: relative;
-  pointer-events: none; /* evita que se pueda abrir modal o añadir al carrito */
-}
-
-.out-of-stock-overlay {
-  position: absolute;
-  top: 40%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(255, 0, 0, 0.8);
+/* PWA Install Banner */
+.install-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: var(--primary);
   color: #fff;
-  font-weight: bold;
-  padding: 6px 12px;
-  border-radius: 6px;
-  text-transform: uppercase;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  transition: transform 0.3s ease-in-out;
+  transform: translateY(100%);
 }
 
-/* Nuevo estilo para la tarjeta del modal de éxito */
-.success-modal-card {
-  position: relative;
-  background: var(--card-bg);
-  padding: 1rem;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  max-width: 100%;
-  width: 500px;
-  text-align: center;
-  margin-left: auto;
-  margin-right: auto;
-  transform: translateY(0);
+.install-banner.visible { transform: translateY(0); }
+
+.install-banner span { font-size: 1rem; font-weight: 500; }
+
+.install-banner div { display: flex; gap: 10px; }
+
+.install-banner button {
+  padding: 8px 15px;
+  border-radius: 14px;
+  border: 1px solid #fff;
+  background: transparent;
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-.success-modal-card h2 {
+.install-banner button:hover { background-color: rgba(255, 255, 255, 0.2); }
+.install-banner .install-btn {
+  background-color: var(--accent);
   color: var(--primary);
-  margin-bottom: 0.5rem;
+  border-color: var(--accent);
 }
 
-.success-modal-card p {
-  color: var(--text);
-  margin-bottom: 0.5rem;
-}
+/* Checkout modal form styles */
+.checkout-modal-card h2 { text-align: center; margin-bottom: 1rem; color: var(--primary); }
+.form-group { margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px; }
+.form-group label { font-size: 0.9rem; color: #333; }
+.form-group input { padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; }
 
-.success-modal-card .checkout-btn,
-.success-modal-card .add-to-cart-btn {
-  margin-top: 1rem;
-}
+/* small utility */
+.hidden { display: none !important; }
