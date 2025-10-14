@@ -187,7 +187,7 @@ body {
 
 .modal-card {
   padding: 0;
-  height: 120%;
+  height: 90%;
   max-width: 100%;
   overflow: hidden;
 }
@@ -263,12 +263,9 @@ body {
   margin-left: 1rem;
 }
 
-/* ====== MODIFICADO: Product grid y tarjetas (solo estas reglas cambiadas) ====== */
-/* pequeño y seguro cambio para que la grilla sea responsiva sin tocar el resto del archivo */
 .product-grid {
   display: grid;
-  /* antes: repeat(3, 1fr); ahora: auto-fill para que se adapte y baje columnas en móviles */
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   grid-auto-rows: auto;
   gap: 10px;
 }
@@ -282,27 +279,20 @@ body {
   display: flex;
   flex-direction: column;
   cursor: default;
-  min-width: 0; /* evita overflow horizontal en flex children */
 }
 
-/* Imágenes responsivas: evitar altura fija que rompe el layout */
 .product-image {
   width: 100%;
-  height: auto; /* ya no forzamos 160px fijo */
+  height: 160px;
   object-fit: cover;
   cursor: pointer;
-  display: block;
-  aspect-ratio: 4/3; /* mantiene proporción en navegadores modernos */
-  max-height: 260px; /* fallback razonable si aspect-ratio no está soportado */
 }
 
-/* Info y texto dentro de la tarjeta */
 .product-info {
   padding: 10px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  min-height: 0; /* importante para que flex:1 funcione bien en children */
 }
 
 .product-name {
@@ -314,19 +304,7 @@ body {
   font-size: .86rem;
   color: #666;
   flex: 1;
-  word-break: break-word;
 }
-
-/* Asegurar que acciones/botones no salgan de la tarjeta y se mantengan abajo */
-.product-card .actions,
-.product-card .card-actions {
-  margin-top: auto;
-  padding: 10px;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-/* ====== FIN DE LA MODIFICACIÓN DE TARJETAS ====== */
 
 .product-price {
   font-weight: 700;
@@ -481,12 +459,9 @@ body {
 }
 
 /* Responsive Design */
-/* Ajusté solo las reglas que afectan la grilla de productos para móviles */
 @media (max-width: 700px) {
   .product-grid {
-    /* mantenemos auto-fill pero con un min más pequeño para que entre 2 columnas en pantallas medianas */
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .carousel-container {
@@ -509,8 +484,7 @@ body {
 
 @media (max-width: 420px) {
   .product-grid {
-    /* en móviles pequeños forzamos 1 columna para evitar colapsos visuales */
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .category-image {
