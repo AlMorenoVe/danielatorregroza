@@ -170,7 +170,6 @@ body {
   width: 100%;
   display: flex;
   justify-content: center;
-  height: 480px;
 }
 
 .modal-card,
@@ -187,8 +186,7 @@ body {
 
 .modal-card {
   padding: 0;
-  height: 120%;
-  max-width: 100%;
+  max-width: 680px;
   overflow: hidden;
 }
 
@@ -343,7 +341,7 @@ body {
 .carousel-image {
   min-width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .carousel-btn {
@@ -465,7 +463,7 @@ body {
   }
 
   .carousel-container {
-    height: 380px;
+    height: 240px;
   }
 
   .logo {
@@ -494,7 +492,7 @@ body {
 
   .carousel-container {
     background: var(--card-bg);
-    height: 256px;
+    height: 200px;
   }
 
   .logo {
@@ -679,7 +677,8 @@ body {
 
 .ad-image {
   width: 100%;
-  aspect-ratio: 1/1;
+  aspect-ratio: 1/1; /* cuadrado */
+  object-fit: cover;
   border-radius: 20px;
   cursor: pointer;
   box-shadow: var(--shadow);
