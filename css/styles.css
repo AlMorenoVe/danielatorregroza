@@ -170,6 +170,7 @@ body {
   width: 100%;
   display: flex;
   justify-content: center;
+  height: 480px;
 }
 
 .modal-card,
@@ -464,7 +465,7 @@ body {
   }
 
   .carousel-container {
-    height: 100%;
+    height: 380px;
   }
 
   .logo {
@@ -493,7 +494,7 @@ body {
 
   .carousel-container {
     background: var(--card-bg);
-    height: 200px;
+    height: 256px;
   }
 
   .logo {
@@ -678,8 +679,7 @@ body {
 
 .ad-image {
   width: 100%;
-  aspect-ratio: 1/1; /* cuadrado */
-  object-fit: cover;
+  aspect-ratio: 1/1;
   border-radius: 20px;
   cursor: pointer;
   box-shadow: var(--shadow);
