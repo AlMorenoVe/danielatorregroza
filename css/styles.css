@@ -122,8 +122,6 @@ body {
 
 /* Banner Carousel */
 .banner-section {
-  margin: 15px;
-  border-radius: 15px;
   position: relative;
   overflow: hidden;
   box-shadow: var(--shadow);
@@ -344,8 +342,15 @@ body {
 
 .product-name {
   color: var(--primary);
-  font-weight: 700;
-  font-size: 1.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+  margin-top: auto;
+}
+
+.product-title {
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 1.2rem;
   margin-top: auto;
 }
 
