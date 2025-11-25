@@ -2,16 +2,7 @@
  * @license
  * Copyright © 2025 Tecnología y Soluciones Informáticas. Todos los derechos reservados.
  *
- * DONDE PETER PWA
- *
- * Este software es propiedad confidencial y exclusiva de TECSIN.
- * El permiso de uso de este software es temporal para pruebas en Donde Peter.
- *
- * Queda estrictamente prohibida la copia, modificación, distribución,
- * ingeniería inversa o cualquier otro uso no autorizado de este código
- * sin el consentimiento explícito por escrito del autor.
- *
- * Para más información, contactar a: sidsoporte@proton.me
+ * Adaptado: Catalogo de Vestuario - selección obligatoria de talla y color en modal.
  */
 
 const { createClient } = supabase;
@@ -28,6 +19,8 @@ let currentProduct = null;
 let deferredPrompt = null;
 const PRODUCTS_PER_PAGE = 25;
 let orderDetails = {};
+let selectedSize = null;
+let selectedColor = null;
 
 // --- Referencias del DOM ---
 const featuredContainer = document.getElementById('featured-grid');
@@ -40,6 +33,8 @@ const noProductsMessage = document.getElementById('no-products-message');
 const searchInput = document.getElementById('search-input');
 const searchResultsTitle = document.getElementById('search-results-title');
 const categoryCarousel = document.getElementById('category-carousel');
+const collageGrid = document.getElementById('collage-grid');
+
 const productModal = document.getElementById('productModal');
 const modalProductName = document.getElementById('modal-product-name');
 const modalProductDescription = document.getElementById('modal-product-description');
@@ -67,6 +62,9 @@ const orderSuccessTotal = document.getElementById('order-success-total');
 const whatsappBtn = document.getElementById('whatsapp-btn');
 const closeSuccessBtn = document.getElementById('close-success-btn');
 const termsConsentCheckbox = document.getElementById('terms-consent-checkbox');
+
+const sizeOptionsContainer = document.getElementById('size-options');
+const colorOptionsContainer = document.getElementById('color-options');
 
 
 // --- Funciones de Ayuda ---
@@ -191,7 +189,7 @@ const generateProductCard = (p) => {
       <div class="product-card${stockClass}" data-product-id="${p.id}">
         ${bestSellerTag}
         <div class="image-wrap">
-          <img src="${p.image[0]}" alt="${p.name}" class="product-image modal-trigger" data-id="${p.id}" loading="lazy" />
+          <img src="${p.image && p.image[0] ? p.image[0] : 'img/favicon.png'}" alt="${p.name}" class="product-image modal-trigger" data-id="${p.id}" loading="lazy" />
           <div class="image-hint" aria-hidden="true">
             <i class="fas fa-hand-point-up" aria-hidden="true"></i>
             <span>Presiona para ver</span>
@@ -232,22 +230,23 @@ function renderProducts(container, data, page = 1, perPage = 20, withPagination 
     } else {
         if (paginationContainer) paginationContainer.innerHTML = '';
     }
+
+    // Tras renderizar, mostramos hints pequeños
+    try {
+        showImageHints(container);
+    } catch (e) {}
 }
 
 function showImageHints(container) {
     // Mostrar el hint de forma temporal en las primeras tarjetas (para indicar acción)
     try {
         const hints = container.querySelectorAll('.image-hint');
-        // Mostrar en las primeras 6 tarjetas o las que haya
         const max = Math.min(6, hints.length);
         for (let i = 0; i < max; i++) {
             const h = hints[i];
-            // añadir clase que dispara la animación/fade
             h.classList.add('show-hint');
-            // animar con pequeño delay escalonado para efecto cascada
             h.style.transitionDelay = `${i * 120}ms`;
         }
-        // quitar la clase después de X ms (por ejemplo 2200ms)
         setTimeout(() => {
             for (let i = 0; i < max; i++) {
                 const h = hints[i];
@@ -258,7 +257,6 @@ function showImageHints(container) {
             }
         }, 2200);
     } catch (err) {
-        // no bloquear si falla
         console.warn('showImageHints err', err);
     }
 }
@@ -267,37 +265,25 @@ function enableTouchHints() {
   let lastTouchedCard = null;
   let lastTouchMoved = false;
 
-  // Mostrar hint al tocar una tarjeta (touchstart)
   function onTouchStart(e) {
     lastTouchMoved = false;
     const card = e.target.closest('.product-card');
     if (!card) return;
-
-    // No mostrar si el target es un control interactivo (botón, input, enlace)
     if (e.target.closest('button, a, input, textarea, select')) return;
-
     const hint = card.querySelector('.image-hint');
     if (!hint) return;
-
-    // Mostrar hint (usa la misma clase .show-hint que el CSS de hint)
     hint.classList.add('show-hint');
-
-    // Guardar y limpiar timeout anterior si existe
     if (card._hintTimeout) {
       clearTimeout(card._hintTimeout);
       card._hintTimeout = null;
     }
-
-    // Ocultar automát. después de X ms
     card._hintTimeout = setTimeout(() => {
       hint.classList.remove('show-hint');
       card._hintTimeout = null;
     }, 2200);
-
     lastTouchedCard = card;
   }
 
-  // Si detectamos movimiento, lo interpretamos como scroll y ocultamos el hint
   function onTouchMove() {
     lastTouchMoved = true;
     if (lastTouchedCard) {
@@ -311,12 +297,10 @@ function enableTouchHints() {
     }
   }
 
-  // Al terminar el touch, si fue un tap (no hubo movimiento) mantenemos el hint un poco
   function onTouchEnd() {
     if (!lastTouchedCard) return;
     const h = lastTouchedCard.querySelector('.image-hint');
     if (h && !lastTouchMoved) {
-      // mantener un poco visible para que el usuario lo note al tocar
       setTimeout(() => {
         h.classList.remove('show-hint');
       }, 700);
@@ -330,11 +314,11 @@ function enableTouchHints() {
     lastTouchedCard = null;
   }
 
-  // Delegación global ligera: passive para no bloquear scroll
   document.addEventListener('touchstart', onTouchStart, { passive: true });
   document.addEventListener('touchmove', onTouchMove, { passive: true });
   document.addEventListener('touchend', onTouchEnd, { passive: true });
 }
+enableTouchHints();
 
 function renderPagination(currentPage, totalPages, data, perPage) {
     const paginationContainer = document.getElementById('pagination-container');
@@ -382,6 +366,44 @@ const generateCategoryCarousel = () => {
     });
 };
 
+/* Collage render:
+   - toma un conjunto de imágenes del catálogo (si hay)
+   - las mezcla y asigna spans aleatorios para crear un collage cuadrado sin espacios
+*/
+function renderCollage() {
+    if (!collageGrid) return;
+    collageGrid.innerHTML = '';
+    const imgs = products.filter(p => p.image && p.image.length > 0).map(p => p.image[0]);
+    if (imgs.length === 0) return;
+    const pool = shuffleArray(imgs.slice());
+    // número de celdas total: 16 (4x4) por defecto
+    const totalCells = 16;
+    const used = [];
+    for (let i = 0; i < Math.min(pool.length, totalCells); i++) {
+        const src = pool[i];
+        const item = document.createElement('div');
+        item.className = 'collage-item';
+        // spans aleatorios 1 o 2 pero evitando desbordes
+        const colSpan = Math.random() > 0.7 ? 2 : 1;
+        const rowSpan = Math.random() > 0.7 ? 2 : 1;
+        item.style.gridColumn = `span ${colSpan}`;
+        item.style.gridRow = `span ${rowSpan}`;
+        item.innerHTML = `<img src="${src}" loading="lazy" alt="collage">`;
+        collageGrid.appendChild(item);
+    }
+    // Si quedan espacios, fill with duplicated random images to keep el cuadro completo
+    while (collageGrid.children.length < totalCells) {
+        const src = pool[Math.floor(Math.random() * pool.length)];
+        const item = document.createElement('div');
+        item.className = 'collage-item';
+        item.style.gridColumn = `span 1`;
+        item.style.gridRow = `span 1`;
+        item.innerHTML = `<img src="${src}" loading="lazy" alt="collage">`;
+        collageGrid.appendChild(item);
+    }
+}
+
+/* Búsqueda */
 searchInput.addEventListener('input', (e) => {
     const q = e.target.value.trim().toLowerCase();
     if (!q) {
@@ -404,6 +426,7 @@ const showDefaultSections = () => {
     const offers = shuffleArray(products.filter(p => p.isOffer)).slice(0, 25);
     renderProducts(featuredContainer, featured, 1, 25, false);
     renderProducts(offersGrid, offers, 1, 25, false);
+    renderCollage();
 };
 
 categoryCarousel.addEventListener('click', (ev) => {
@@ -459,7 +482,19 @@ document.addEventListener('click', (e) => {
     }
     if (e.target.id === 'modal-add-to-cart-btn') {
         const qty = Math.max(1, parseInt(qtyInput.value) || 1);
-        addToCart(currentProduct.id, qty);
+        // Validaciones: talla y color obligatorios
+        if (!selectedSize || !selectedColor) {
+            // animar los grupos vacíos para indicar al usuario
+            if (!selectedSize) document.getElementById('size-group').classList.add('required-pulse');
+            if (!selectedColor) document.getElementById('color-group').classList.add('required-pulse');
+            setTimeout(() => {
+                document.getElementById('size-group').classList.remove('required-pulse');
+                document.getElementById('color-group').classList.remove('required-pulse');
+            }, 1500);
+            alert('Debes seleccionar talla y color antes de añadir al carrito.');
+            return;
+        }
+        addToCart(currentProduct.id, qty, selectedSize, selectedColor);
         closeModal(productModal);
     }
 });
@@ -473,6 +508,13 @@ function showModal(modal) {
 function closeModal(modal) {
     modal.style.display = 'none';
     modal.setAttribute('aria-hidden', 'true');
+    // limpiar selección temporal
+    selectedSize = null;
+    selectedColor = null;
+    if (sizeOptionsContainer) sizeOptionsContainer.innerHTML = '';
+    if (colorOptionsContainer) colorOptionsContainer.innerHTML = '';
+    modalAddToCartBtn.disabled = true;
+    modalAddToCartBtn.setAttribute('aria-disabled', 'true');
 }
 
 [productModal, cartModal, checkoutModal, orderSuccessModal].forEach(modal => {
@@ -498,9 +540,81 @@ function openProductModal(id) {
     modalProductDescription.textContent = product.description;
     modalProductPrice.textContent = `$${money(product.price)}`;
     qtyInput.value = 1;
+    selectedSize = null;
+    selectedColor = null;
+    renderSizeOptions(product);
+    renderColorOptions(product);
     modalAddToCartBtn.dataset.id = product.id;
+    // animación sutil en grupos para indicar obligatorio
+    document.getElementById('size-group').classList.add('required-pulse');
+    document.getElementById('color-group').classList.add('required-pulse');
+    setTimeout(() => {
+      document.getElementById('size-group').classList.remove('required-pulse');
+      document.getElementById('color-group').classList.remove('required-pulse');
+    }, 1400);
     updateCarousel(product.image || []);
     showModal(productModal);
+}
+
+function renderSizeOptions(product) {
+    if (!sizeOptionsContainer) return;
+    sizeOptionsContainer.innerHTML = '';
+    // Esperamos que product.sizes sea array: ["S","M","L"] ; si no existe, inferimos básicas
+    const sizes = product.sizes && product.sizes.length ? product.sizes : ['S','M','L','XL'];
+    sizes.forEach(sz => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'selection-option';
+        btn.textContent = sz;
+        btn.addEventListener('click', () => {
+            // toggle visual
+            selectedSize = sz;
+            // remover selected de hermanos
+            sizeOptionsContainer.querySelectorAll('.selection-option').forEach(x => x.classList.remove('selected'));
+            btn.classList.add('selected');
+            document.getElementById('size-group').classList.remove('required-pulse');
+            updateAddToCartEnabled();
+        });
+        sizeOptionsContainer.appendChild(btn);
+    });
+}
+
+function renderColorOptions(product) {
+    if (!colorOptionsContainer) return;
+    colorOptionsContainer.innerHTML = '';
+    // Esperamos product.colors como array de nombres o hex: ["Rojo", "#000"]
+    const colors = product.colors && product.colors.length ? product.colors : ['Negro','Blanco','Azul'];
+    colors.forEach(c => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'selection-option';
+        // Si es un color hex usamos fondo, si no mostramos texto
+        const isHex = /^#([0-9A-F]{3}){1,2}$/i.test(c);
+        if (isHex) {
+            btn.innerHTML = `<span style="display:inline-block;width:18px;height:18px;border-radius:4px;background:${c};vertical-align:middle;"></span>`;
+            btn.title = c;
+        } else {
+            btn.textContent = c;
+        }
+        btn.addEventListener('click', () => {
+            selectedColor = c;
+            colorOptionsContainer.querySelectorAll('.selection-option').forEach(x => x.classList.remove('selected'));
+            btn.classList.add('selected');
+            document.getElementById('color-group').classList.remove('required-pulse');
+            updateAddToCartEnabled();
+        });
+        colorOptionsContainer.appendChild(btn);
+    });
+}
+
+function updateAddToCartEnabled() {
+    if (selectedSize && selectedColor) {
+        modalAddToCartBtn.disabled = false;
+        modalAddToCartBtn.setAttribute('aria-disabled', 'false');
+    } else {
+        modalAddToCartBtn.disabled = true;
+        modalAddToCartBtn.setAttribute('aria-disabled', 'true');
+    }
 }
 
 // --- Anuncios ---
@@ -562,7 +676,20 @@ function updateCart() {
         totalItems += item.qty;
         const div = document.createElement('div');
         div.className = 'cart-item';
-        div.innerHTML = `<div style="display:flex;align-items:center;gap:8px;"><img src="${item.image}" alt="${item.name}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;"><div><strong>${item.name}</strong><div style="font-size:.9rem;color:#666">${item.qty} x $${money(item.price)}</div></div></div><div class="controls"><button class="qty-btn" data-idx="${idx}" data-op="dec">-</button><button class="qty-btn" data-idx="${idx}" data-op="inc">+</button></div>`;
+        const itemInfo = `<div style="display:flex;align-items:center;gap:8px;">
+            <img src="${item.image}" alt="${item.name}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;">
+            <div>
+              <div style="font-weight:700">${item.name}</div>
+              <div style="font-size:0.85rem;color:#666">Talla: ${item.size} • Color: ${item.color}</div>
+              <div style="font-size:0.9rem;color:#333">$${money(item.price)} x ${item.qty}</div>
+            </div>
+          </div>`;
+        const controls = `<div class="controls">
+            <button class="qty-btn" data-idx="${idx}" data-op="dec">-</button>
+            <span>${item.qty}</span>
+            <button class="qty-btn" data-idx="${idx}" data-op="inc">+</button>
+          </div>`;
+        div.innerHTML = itemInfo + controls;
         cartItemsContainer.appendChild(div);
     });
     cartBadge.style.display = 'flex';
@@ -570,13 +697,13 @@ function updateCart() {
     cartTotalElement.textContent = money(total);
 }
 
-function addToCart(id, qty = 1) {
+function addToCart(id, qty = 1, size = null, color = null) {
     const p = products.find(x => x.id === id);
     if (!p) return;
 
     // Verificar si hay suficiente stock
     const availableStock = p.stock || 0;
-    const existingInCart = cart.find(i => i.id === id);
+    const existingInCart = cart.find(i => i.id === id && i.size === size && i.color === color);
     const currentQtyInCart = existingInCart ? existingInCart.qty : 0;
 
     if (currentQtyInCart + qty > availableStock) {
@@ -592,7 +719,9 @@ function addToCart(id, qty = 1) {
             name: p.name,
             price: p.price,
             qty,
-            image: p.image[0]
+            image: p.image && p.image[0] ? p.image[0] : 'img/favicon.png',
+            size,
+            color
         });
     }
 
@@ -602,7 +731,9 @@ function addToCart(id, qty = 1) {
     showAddToCartToast({
         image: p.image && p.image[0] ? p.image[0] : 'img/favicon.png',
         name: p.name,
-        qty
+        qty,
+        size,
+        color
     });
 }
 
@@ -618,8 +749,7 @@ function escapeHtml(str) {
 }
 
 /* Helper: crea y anima el toast (se añade al body y se elimina tras el tiempo especificado) */
-function showAddToCartToast({ image, name, qty = 1 }) {
-    // Si ya existe un toast activo, lo removemos para re-crear (evita duplicados)
+function showAddToCartToast({ image, name, qty = 1, size = '', color = '' }) {
     const existing = document.getElementById('add-to-cart-toast');
     if (existing) {
         existing.remove();
@@ -630,30 +760,27 @@ function showAddToCartToast({ image, name, qty = 1 }) {
     toast.className = 'add-to-cart-toast';
 
     const safeName = escapeHtml(name);
+    const safeSize = escapeHtml(size);
+    const safeColor = escapeHtml(color);
 
     toast.innerHTML = `
       <img src="${image}" alt="${safeName}" class="toast-img" loading="lazy" />
       <div class="toast-text">
         <div class="toast-title">${safeName}</div>
-        <div class="toast-sub">Añadido x${qty}</div>
+        <div class="toast-sub">Añadido x${qty} • ${safeSize} • ${safeColor}</div>
       </div>
     `;
 
-    // Añadir al DOM
     document.body.appendChild(toast);
 
-    // Forzar reflow y disparar la animación CSS
-    // (usa requestAnimationFrame para asegurar aplicación de la clase 'show')
     requestAnimationFrame(() => {
         toast.classList.add('show');
     });
 
-    // Tiempo visible y salida animada
     const VISIBLE_MS = 2000;
     setTimeout(() => {
         toast.classList.remove('show');
         toast.classList.add('hide');
-        // eliminar al terminar la transición
         toast.addEventListener('transitionend', () => {
             toast.remove();
         }, { once: true });
@@ -715,7 +842,14 @@ finalizeBtn.addEventListener('click', () => {
         name,
         address,
         payment,
-        items: [...cart],
+        items: cart.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            qty: item.qty,
+            size: item.size,
+            color: item.color
+        })),
         total: cart.reduce((acc, item) => acc + item.price * item.qty, 0)
     };
 
@@ -743,7 +877,7 @@ whatsappBtn.addEventListener('click', async () => {
     }
 
     try {
-        // 1. Guardar la orden en DB (tabla 'orders')
+        // 1. Guardar la orden en DB (tabla 'orders') desde cliente (también lo hace API route)
         const { data: orderData, error: orderError } = await supabaseClient
             .from('orders')
             .insert([{
@@ -757,13 +891,12 @@ whatsappBtn.addEventListener('click', async () => {
             .select();
 
         if (orderError) {
-           
-            console.error('Error al guardar la orden en DB:', orderError);
+            console.error('Error al guardar la orden en DB (cliente):', orderError);
             alert('Error al guardar la orden en DB: ' + orderError.message);
             return;
         }
         
-        // 2. Intentar llamar al API Route
+        // 2. Intentar llamar al API Route (para que el servidor haga updates sensibles)
         const response = await fetch('api/place-order', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -788,9 +921,9 @@ whatsappBtn.addEventListener('click', async () => {
 
         // 3. Enviar mensaje de WhatsApp
         const whatsappNumber = '573227671829';
-        let message = `Hola mi nombre es ${encodeURIComponent(orderDetails.name)}.%0AHe realizado un pedido para la dirección ${encodeURIComponent(orderDetails.address)} quiero confirmar el pago en ${encodeURIComponent(orderDetails.payment)}.%0A%0A--- Mi pedido es: ---%0A`;
+        let message = `Hola mi nombre es ${encodeURIComponent(orderDetails.name)}.%0AHe realizado un pedido para la dirección ${encodeURIComponent(orderDetails.address)}.%0A%0A`;
         orderDetails.items.forEach(item => {
-            message += `- ${encodeURIComponent(item.name)} x${item.qty} = $${money(item.price * item.qty)}%0A`;
+            message += `- ${encodeURIComponent(item.name)} (Talla: ${encodeURIComponent(item.size)}, Color: ${encodeURIComponent(item.color)}) x${item.qty} = $${money(item.price * item.qty)}%0A`;
         });
         message += `%0ATotal: $${money(orderDetails.total)}`;
         const link = `https://wa.me/${whatsappNumber}?text=${message}`;
@@ -831,7 +964,6 @@ installCloseBtn && installCloseBtn.addEventListener('click', () => installBanner
 // --- Funciones de DB ---
 const fetchProductsFromSupabase = async () => {
     if (!supabaseClient) {
-        
         return []; 
     }
     try {
@@ -851,7 +983,6 @@ const fetchProductsFromSupabase = async () => {
 
 const loadConfigAndInitSupabase = async () => {
     try {
-        
         const response = await fetch('api/get-config');
         
         if (!response.ok) {
@@ -869,20 +1000,21 @@ const loadConfigAndInitSupabase = async () => {
         SB_URL = config.url;
         SB_ANON_KEY = config.anonKey;
 
-        
         supabaseClient = createClient(SB_URL, SB_ANON_KEY);
 
         products = await fetchProductsFromSupabase();
         if (products.length > 0) {
             showDefaultSections();
             generateCategoryCarousel();
+        } else {
+            renderCollage();
         }
         updateCart();
     } catch (error) {
         console.error('Error FATAL al iniciar la aplicación:', error);
         
         const loadingMessage = document.createElement('div');
-        loadingMessage.style = 'position:fixed;top:0;left:0;width:100%;height:100%;background:white;display:flex;align-items:center;justify-content:center;color:red;font-weight:bold;text-align:center;padding:20px;z-index:9999;';
+        loadingMessage.style = 'position:fixed;top:0;left:0;width:100%;height:100%;background:white;display:flex;align-items:center;justify-content:center;color:red;font-weight:bold;text-align:center;padding:1rem';
         loadingMessage.textContent = 'ERROR DE INICIALIZACIÓN: No se pudo cargar la configuración de la tienda. Revisa la consola para más detalles (Faltan variables de entorno en Vercel).';
         document.body.appendChild(loadingMessage);
     }

@@ -55,10 +55,27 @@ body {
   z-index: 100;
 }
 
-.logo {
-  font-size: 1.8rem;
-  letter-spacing: 4px;
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-logo {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.brand-title {
+  font-size: 1.2rem;
   color: var(--primary);
+  letter-spacing: 2px;
+}
+
+/* En móvil solo mostramos logo */
+@media (max-width: 420px) {
+  .brand-title { display: none; }
 }
 
 .search-container {
@@ -186,7 +203,7 @@ body {
 
 .modal-card {
   padding: 0;
-  max-width: 680px;
+  max-width: 780px;
   overflow: hidden;
 }
 
@@ -233,6 +250,37 @@ body {
   white-space: nowrap;
 }
 
+/* Collage Section */
+.collage-section {
+  padding: 0.5rem 1rem;
+  margin-top: 6px;
+}
+
+.collage-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: 120px;
+  gap: 0;
+  width: 100%;
+  height: 480px; /* cuadrado aproximado, ajustable */
+  overflow: hidden;
+  grid-auto-flow: dense;
+}
+
+.collage-item {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.collage-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0; /* sin bordes para encajar perfecto */
+  display: block;
+}
+
 /* Product Sections and Grid */
 .menu-section {
   padding: 10px 0 20px;
@@ -277,6 +325,7 @@ body {
   display: flex;
   flex-direction: column;
   cursor: default;
+  min-height: 320px;
 }
 
 .product-image {
@@ -291,23 +340,85 @@ body {
   display: flex;
   flex-direction: column;
   gap: 6px;
-}
-
-.product-name {
-  color: var(--primary);
-  font-size: 0.98rem;
-}
-
-.product-description {
-  font-size: .86rem;
-  color: #666;
   flex: 1;
 }
 
+/* Descripción con tamaño fijo y puntos suspensivos si excede */
+.product-description {
+  font-size: .86rem;
+  color: #666;
+  flex: 0 0 auto;
+  display: -webkit-box;
+  -webkit-line-clamp: 3; /* mostrar hasta 3 líneas */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 3.6rem; /* para mantener tamaño visual consistente */
+}
+
+/* Precio siempre pegado abajo */
 .product-price {
   font-weight: 700;
   color: var(--accent);
   font-size: 1rem;
+  margin-top: auto;
+}
+
+/* Modal selections */
+.selection-row {
+  display: flex;
+  gap: 12px;
+  margin: 10px 0;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.selection-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 140px;
+}
+
+.selection-title {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 0.9rem;
+}
+
+.selection-options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.selection-option {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  background: #fff;
+  transition: transform .12s ease, box-shadow .12s ease;
+  user-select: none;
+}
+
+.selection-option.selected {
+  border-color: var(--primary);
+  box-shadow: 0 4px 14px rgba(39,105,244,0.12);
+  transform: translateY(-2px);
+}
+
+/* Animación sutil para indicar que debe elegir talla/color */
+.required-pulse {
+  animation: requiredPulse 1200ms ease-in-out infinite;
+  box-shadow: 0 6px 20px rgba(39,105,244,0.08);
+  border-radius: 10px;
+}
+
+@keyframes requiredPulse {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+  100% { transform: translateY(0); }
 }
 
 .modal-close {
@@ -408,6 +519,11 @@ body {
   margin-top: 8px;
 }
 
+.add-to-cart-btn[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .checkout-btn {
   background: #25D366;
   margin-top: 12px;
@@ -466,8 +582,8 @@ body {
     height: 380px;
   }
 
-  .logo {
-    font-size: 1.5rem;
+  .brand-title {
+    font-size: 1rem;
   }
 
   #search-input {
@@ -495,7 +611,7 @@ body {
     height: 250px;
   }
 
-  .logo {
+  .brand-title {
     display: none;
   }
 }
@@ -915,6 +1031,15 @@ body {
   100% {
     opacity: 0;
     transform: translate(-50%, -62%) scale(0.98);
+  }
+}
+
+/* Evitar movimientos para usuarios que prefieren reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .image-hint,
+  .image-hint.show-hint {
+    animation: none;
+    transition: none;
   }
 }
 

@@ -5,25 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     
     <!-- SEO Básico y Título -->
-    <title>Menú Digital | Comida Rápida en Bucaramanga</title>
-    <meta name="description" content="Consulta el menú digital de Comida Rápida. Pide las mejores hamburguesas, perros calientes y comida rápida en Bucaramanga. ¡Haz tu pedido a domicilio!">
-    <meta name="keywords" content="Comida Rápida, comida rápida bucaramanga, menú digital, hamburguesas, perros calientes, domicilio santander">
+    <title>Menú Digital | Vestuario - Donde Peter</title>
+    <meta name="description" content="Catálogo de vestuario. Explora prendas, elige talla y color y realiza tu pedido.">
+    <meta name="keywords" content="Ropa, vestuario, catálogo, tallas, colores, Donde Peter">
 
     <!-- URL Canónica -->
     <link rel="canonical" href="https://dondepeter.vercel.app/" />
 
     <!-- SEO Open Graph (para WhatsApp, Facebook, etc.) -->
-    <meta property="og:title" content="Menú Digital | Comida Rápida en Bucaramanga" />
-    <meta property="og:description" content="Pide las mejores hamburguesas, perros calientes y más. ¡Consulta nuestro menú y haz tu pedido a domicilio!" />
+    <meta property="og:title" content="Catálogo de Vestuario | Donde Peter" />
+    <meta property="og:description" content="Explora prendas, elige talla y color y haz tu pedido a domicilio." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://dondepeter.vercel.app/" />
     <meta property="og:image" content="https://dondepeter.vercel.app/img/favicon.png" />
-    <meta property="og:image:alt" content="Logo de Comida Rápida Comida Rápida" />
+    <meta property="og:image:alt" content="Donde Peter - Vestuario" />
 
     <!-- SEO Twitter Card -->
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="Menú Digital Comida Rápida">
-    <meta name="twitter:description" content="Pide las mejores hamburguesas, perros calientes y más. ¡Consulta nuestro menú!">
+    <meta name="twitter:title" content="Catálogo Vestuario Donde Peter">
+    <meta name="twitter:description" content="Explora prendas, elige talla y color y haz tu pedido a domicilio!">
     <meta name="twitter:image" content="https://dondepeter.vercel.app/img/favicon.png">
 
     <!-- PWA y Meta de Tema -->
@@ -47,14 +47,12 @@
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "Restaurant",
-      "name": "Donde Peter",
+      "@type": "Store",
+      "name": "Donde Peter - Vestuario",
       "image": "https://dondepeter.vercel.app/img/favicon.png",
       "url": "https://dondepeter.vercel.app/",
       "telephone": "+57-3227671829",
-      "servesCuisine": "Comida Rápida",
       "priceRange": "$",
-      "menu": "https://dondepeter.vercel.app/",
       "address": {
         "@type": "PostalAddress",
         "streetAddress": "Carrera 27 # 10-50",
@@ -62,23 +60,7 @@
         "addressRegion": "Santander",
         "postalCode": "680001",
         "addressCountry": "CO"
-      },
-      "openingHoursSpecification": [
-        {
-          "@type": "OpeningHoursSpecification",
-          "dayOfWeek": [
-            "Monday",
-            "Tuesday",
-            "Wednesday",
-            "Thursday",
-            "Friday",
-            "Saturday",
-            "Sunday"
-          ],
-          "opens": "17:00",
-          "closes": "23:00"
-        }
-      ]
+      }
     }
     </script>
 </head>
@@ -86,9 +68,12 @@
     <div class="page-container">
 
         <nav class="navbar">
-            <h1 class="logo">Comida Rápida</h1>
+            <div class="brand">
+                <img src="img/favicon.png" alt="Donde Peter" class="brand-logo" />
+                <h1 class="brand-title">Donde Peter</h1>
+            </div>
             <div class="search-container">
-                <input id="search-input" type="search" placeholder="Buscar producto, marca o categoría..." />
+                <input id="search-input" type="search" placeholder="Buscar prenda, marca o categoría..." />
             </div>
             <button id="cart-btn" class="nav-cart-btn">
                 <i class="fas fa-shopping-cart"></i>
@@ -110,24 +95,14 @@
           <div class="banner-dots" id="banner-dots"></div>
         </section>
 
-        </nav> <div class="ticker-wrapper">
+        </nav>
+
+        <div class="ticker-wrapper">
             <div class="ticker-text">
                  <span>Donde Peter APP</span>
                 <span>Envío Gratis En Compras Superiores A $150.000 ✨</span>
                 <span>Descuentos Del 20% En Productos Seleccionados solo En Nuestra App 🔥</span>
                 <span>Nuevos Productos Ya Disponibles 🚀</span>
-                 <span>Donde Peter APP</span>
-                <span>Descuentos Del 20% En Productos Seleccionados solo En Nuestra App 🔥</span>
-                <span>Nuevos Productos Ya Disponibles 🚀</span>
-                <span>Donde Peter APP 🚀</span>
-                 <span>Donde Peter APP</span>
-                <span>Envío Gratis En Compras Superiores A $150.000 ✨</span>
-                <span>Descuentos Del 20% En Productos Seleccionados solo En Nuestra App 🔥</span>
-                <span>Nuevos Productos Ya Disponibles 🚀</span>
-                 <span>Donde Peter APP</span>
-                <span>Descuentos Del 20% En Productos Seleccionados solo En Nuestra App 🔥</span>
-                <span>Nuevos Productos Ya Disponibles 🚀</span>
-                <span>Donde Peter APP 🚀</span>
             </div>
         </div>
 
@@ -136,6 +111,11 @@
                 <div id="category-carousel" class="category-carousel"></div>
             </div>
         </nav>
+
+        <!-- Nueva sección de collage justo debajo de categorías -->
+        <section id="collage-section" class="collage-section">
+            <div id="collage-grid" class="collage-grid" aria-hidden="false"></div>
+        </section>
 
         <main class="menu-container">
             <section id="filtered-section" class="menu-section" style="display:none;">
@@ -152,7 +132,7 @@
 
             <section id="ads-section" class="ads-section">
             <div class="ads-grid">
-                <img src="https://ndqzyplsiqigsynweihk.supabase.co/storage/v1/object/public/donde_peter/baner/favicon.png" alt="Publicidad 2"class="ad-image" data-product-id="728b36cf-6b4d-4f50-8c99-ccde786cf031">
+                <img src="https://ndqzyplsiqigsynweihk.supabase.co/storage/v1/object/public/donde_peter/baner/favicon.png" alt="Publicidad"class="ad-image" data-product-id="">
             </div>
             </section>
 
@@ -175,11 +155,24 @@
                         <h3 id="modal-product-name"></h3>
                         <p id="modal-product-description"></p>
                         <p id="modal-product-price" class="price"></p>
+
+                        <!-- Selección obligatoria de talla y color -->
+                        <div class="selection-row">
+                          <div class="selection-group" id="size-group" data-required="true">
+                            <div class="selection-title">Talla</div>
+                            <div id="size-options" class="selection-options"></div>
+                          </div>
+                          <div class="selection-group" id="color-group" data-required="true">
+                            <div class="selection-title">Color</div>
+                            <div id="color-options" class="selection-options"></div>
+                          </div>
+                        </div>
+
                         <div class="qty-row">
                             <label for="qty-input">Cantidad</label>
                             <input id="qty-input" type="number" min="1" value="1" />
                         </div>
-                        <button id="modal-add-to-cart-btn" class="add-to-cart-btn">Añadir al carrito</button>
+                        <button id="modal-add-to-cart-btn" class="add-to-cart-btn" aria-disabled="true" disabled>Añadir al carrito</button>
                     </div>
                 </div>
             </div>
@@ -234,7 +227,7 @@
           <div class="modal-content-wrapper">
             <div class="success-modal-card">
               <button class="modal-close close-success-btn">&times;</button>
-              <h2>¡Tu comida está casi lista!</h2>
+              <h2>¡Tu pedido está casi listo!</h2>
               <p id="order-success-description"></p>
               <p>Tu pedido se está preparando. Solo falta confirmar el pago y saldrá para tu dirección.</p>
               <p><strong>Total:</strong> $<span id="order-success-total"></span></p>
