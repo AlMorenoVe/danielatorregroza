@@ -3,6 +3,8 @@
  * Copyright © 2025 Tecnología y Soluciones Informáticas. Todos los derechos reservados.
  *
  * Adaptado: Catalogo de Vestuario - selección obligatoria de talla y color en modal.
+ * Cambios: Collage: cada imagen enlaza al producto respectivo y tiene efecto de ampliación al seleccionar.
+ *         Modal: opciones de talla/color centradas y lectura de tallas/colores desde la BD (soporta arrays o CSV).
  */
 
 const { createClient } = supabase;
@@ -81,7 +83,7 @@ const shuffleArray = (array) => {
     return array;
 };
 
-// --- Lógica del carrusel de banner ---
+// --- Lógica del carrusel de banner (sin cambios) ---
 const bannerCarousel = document.getElementById('banner-carousel');
 const bannerDots = document.getElementById('banner-dots');
 if (bannerCarousel) {
@@ -171,7 +173,7 @@ if (bannerCarousel) {
     resetInterval();
 }
 
-// --- Funciones para renderizar productos ---
+// --- Funciones para renderizar productos (sin cambios importantes) ---
 const generateProductCard = (p) => {
     let bestSellerTag = '';
     if (p.bestSeller) {
@@ -238,7 +240,6 @@ function renderProducts(container, data, page = 1, perPage = 20, withPagination 
 }
 
 function showImageHints(container) {
-    // Mostrar el hint de forma temporal en las primeras tarjetas (para indicar acción)
     try {
         const hints = container.querySelectorAll('.image-hint');
         const max = Math.min(6, hints.length);
@@ -367,50 +368,95 @@ const generateCategoryCarousel = () => {
 };
 
 /* Collage render:
-   - toma un conjunto de imágenes del catálogo (si hay)
-   - las mezcla y asigna spans aleatorios para crear un collage cuadrado sin espacios
+   - ahora mapea imagen -> producto (usa product.image[0] y product.id)
+   - cada imagen enlaza al producto correspondiente (abre modal)
+   - efecto de ampliación al hover y al seleccionar (breve)
 */
 function renderCollage() {
     if (!collageGrid) return;
     collageGrid.innerHTML = '';
-    const imgs = products.filter(p => p.image && p.image.length > 0).map(p => p.image[0]);
-    if (imgs.length === 0) return;
-    const pool = shuffleArray(imgs.slice());
-    // número de celdas total: 16 (4x4) por defecto
+
+    // crear pool de objetos { id, img }
+    const pool = products
+        .filter(p => p.image && p.image.length > 0)
+        .map(p => ({ id: p.id, img: p.image[0] }));
+
+    if (pool.length === 0) return;
+
+    const shuffled = shuffleArray(pool.slice());
+
+    // numero de celdas (4x4)
     const totalCells = 16;
-    const used = [];
-    for (let i = 0; i < Math.min(pool.length, totalCells); i++) {
-        const src = pool[i];
+    let idx = 0;
+
+    while (idx < Math.min(shuffled.length, totalCells)) {
+        const p = shuffled[idx];
         const item = document.createElement('div');
         item.className = 'collage-item';
-        // spans aleatorios 1 o 2 pero evitando desbordes
-        const colSpan = Math.random() > 0.7 ? 2 : 1;
-        const rowSpan = Math.random() > 0.7 ? 2 : 1;
+        item.setAttribute('data-product-id', p.id);
+        // spans aleatorios 1 o 2 pero evitando expandirse demasiadas veces
+        const colSpan = Math.random() > 0.75 ? 2 : 1;
+        const rowSpan = Math.random() > 0.75 ? 2 : 1;
         item.style.gridColumn = `span ${colSpan}`;
         item.style.gridRow = `span ${rowSpan}`;
-        item.innerHTML = `<img src="${src}" loading="lazy" alt="collage">`;
+        item.innerHTML = `<img src="${p.img}" loading="lazy" alt="collage">`;
+        // click abre modal del producto
+        item.addEventListener('click', (ev) => {
+            // animación breve de selección
+            item.classList.add('collage-item-selected');
+            setTimeout(() => item.classList.remove('collage-item-selected'), 260);
+            const id = item.getAttribute('data-product-id');
+            if (id) openProductModal(id);
+        });
         collageGrid.appendChild(item);
+        idx++;
     }
-    // Si quedan espacios, fill with duplicated random images to keep el cuadro completo
+
+    // rellenar si hay menos items que celdas
     while (collageGrid.children.length < totalCells) {
-        const src = pool[Math.floor(Math.random() * pool.length)];
+        const random = shuffled[Math.floor(Math.random() * shuffled.length)];
         const item = document.createElement('div');
         item.className = 'collage-item';
+        item.setAttribute('data-product-id', random.id);
         item.style.gridColumn = `span 1`;
         item.style.gridRow = `span 1`;
-        item.innerHTML = `<img src="${src}" loading="lazy" alt="collage">`;
+        item.innerHTML = `<img src="${random.img}" loading="lazy" alt="collage">`;
+        item.addEventListener('click', () => {
+            item.classList.add('collage-item-selected');
+            setTimeout(() => item.classList.remove('collage-item-selected'), 260);
+            openProductModal(random.id);
+        });
         collageGrid.appendChild(item);
     }
 }
 
-/* Búsqueda */
+/* Helper para leer tallas/colores de acuerdo a la estructura de la BD:
+   - soporta product.sizes (array), product.size (string con CSV o single)
+   - soporta product.colors (array), product.color (string con CSV o single)
+*/
+function parseOptionsField(field) {
+    if (!field) return [];
+    if (Array.isArray(field)) return field;
+    if (typeof field === 'string') {
+        // dividir por comas si contiene coma, o por | o ;
+        if (field.includes(',')) return field.split(',').map(s => s.trim()).filter(Boolean);
+        if (field.includes('|')) return field.split('|').map(s => s.trim()).filter(Boolean);
+        if (field.includes(';')) return field.split(';').map(s => s.trim()).filter(Boolean);
+        // single value
+        return [field.trim()];
+    }
+    // fallback
+    return [];
+}
+
+/* Búsqueda y UI (sin cambios funcionales) */
 searchInput.addEventListener('input', (e) => {
     const q = e.target.value.trim().toLowerCase();
     if (!q) {
         showDefaultSections();
         return;
     }
-    const filtered = products.filter(p => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
+    const filtered = products.filter(p => p.name.toLowerCase().includes(q) || (p.description && p.description.toLowerCase().includes(q)) || (p.category && p.category.toLowerCase().includes(q)));
     filteredSection.style.display = 'block';
     featuredSection.style.display = 'none';
     offersSection.style.display = 'none';
@@ -438,7 +484,7 @@ categoryCarousel.addEventListener('click', (ev) => {
         showDefaultSections();
         return;
     }
-    const filtered = products.filter(p => p.category.toLowerCase() === cat.toLowerCase());
+    const filtered = products.filter(p => p.category && p.category.toLowerCase() === cat.toLowerCase());
     filteredSection.style.display = 'block';
     featuredSection.style.display = 'none';
     offersSection.style.display = 'none';
@@ -482,9 +528,7 @@ document.addEventListener('click', (e) => {
     }
     if (e.target.id === 'modal-add-to-cart-btn') {
         const qty = Math.max(1, parseInt(qtyInput.value) || 1);
-        // Validaciones: talla y color obligatorios
         if (!selectedSize || !selectedColor) {
-            // animar los grupos vacíos para indicar al usuario
             if (!selectedSize) document.getElementById('size-group').classList.add('required-pulse');
             if (!selectedColor) document.getElementById('color-group').classList.add('required-pulse');
             setTimeout(() => {
@@ -556,20 +600,22 @@ function openProductModal(id) {
     showModal(productModal);
 }
 
+/* Render options: ahora leen correctamente desde la estructura de la BD
+   y centran las opciones visualmente (CSS también se actualiza) */
 function renderSizeOptions(product) {
     if (!sizeOptionsContainer) return;
     sizeOptionsContainer.innerHTML = '';
-    // Esperamos que product.sizes sea array: ["S","M","L"] ; si no existe, inferimos básicas
-    const sizes = product.sizes && product.sizes.length ? product.sizes : ['S','M','L','XL'];
-    sizes.forEach(sz => {
+    // buscar posibles campos: sizes (array), size (csv/string), size_options
+    const raw = product.sizes || product.size || product.size_options || [];
+    const sizes = parseOptionsField(raw);
+    const finalSizes = sizes.length ? sizes : ['S','M','L','XL'];
+    finalSizes.forEach(sz => {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'selection-option';
         btn.textContent = sz;
         btn.addEventListener('click', () => {
-            // toggle visual
             selectedSize = sz;
-            // remover selected de hermanos
             sizeOptionsContainer.querySelectorAll('.selection-option').forEach(x => x.classList.remove('selected'));
             btn.classList.add('selected');
             document.getElementById('size-group').classList.remove('required-pulse');
@@ -582,13 +628,13 @@ function renderSizeOptions(product) {
 function renderColorOptions(product) {
     if (!colorOptionsContainer) return;
     colorOptionsContainer.innerHTML = '';
-    // Esperamos product.colors como array de nombres o hex: ["Rojo", "#000"]
-    const colors = product.colors && product.colors.length ? product.colors : ['Negro','Blanco','Azul'];
-    colors.forEach(c => {
+    const raw = product.colors || product.color || product.color_options || [];
+    const colors = parseOptionsField(raw);
+    const finalColors = colors.length ? colors : ['Negro','Blanco','Azul'];
+    finalColors.forEach(c => {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'selection-option';
-        // Si es un color hex usamos fondo, si no mostramos texto
         const isHex = /^#([0-9A-F]{3}){1,2}$/i.test(c);
         if (isHex) {
             btn.innerHTML = `<span style="display:inline-block;width:18px;height:18px;border-radius:4px;background:${c};vertical-align:middle;"></span>`;
@@ -617,7 +663,7 @@ function updateAddToCartEnabled() {
     }
 }
 
-// --- Anuncios ---
+// --- Anuncios (sin cambios) ---
 document.querySelectorAll('.ad-image').forEach(img => {
     img.addEventListener('click', () => {
         const id = img.dataset.productId;
@@ -701,7 +747,6 @@ function addToCart(id, qty = 1, size = null, color = null) {
     const p = products.find(x => x.id === id);
     if (!p) return;
 
-    // Verificar si hay suficiente stock
     const availableStock = p.stock || 0;
     const existingInCart = cart.find(i => i.id === id && i.size === size && i.color === color);
     const currentQtyInCart = existingInCart ? existingInCart.qty : 0;
@@ -727,7 +772,6 @@ function addToCart(id, qty = 1, size = null, color = null) {
 
     updateCart();
 
-    // Mostrar el toast de confirmación con imagen y título
     showAddToCartToast({
         image: p.image && p.image[0] ? p.image[0] : 'img/favicon.png',
         name: p.name,
