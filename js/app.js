@@ -1,12 +1,8 @@
 /**
- * @license
- * Copyright © 2025 Tecnología y Soluciones Informáticas.
- *
- * Adaptado para catálogo de vestuario:
- * - Modal obliga a elegir talla y color.
- * - Collage inicial con tarjetas solo imagen en tamaño/orden aleatorio.
- * - Precio siempre alineado abajo.
- * - Descripción truncada en tarjeta, completa en modal.
+ * Adaptaciones para catálogo de vestuario:
+ * - Collage como mosaico cuadrado colocado entre categorías y destacados
+ * - Selección de talla/color como botones
+ * - Precio fijo al final de la tarjeta
  */
 
 const { createClient } = supabase;
@@ -15,16 +11,14 @@ let SB_URL = null;
 let SB_ANON_KEY = null;
 let supabaseClient = null;
 
-// --- Variables de estado ---
 let cart = [];
 let products = [];
 let currentImageIndex = 0;
 let currentProduct = null;
 let deferredPrompt = null;
-const PRODUCTS_PER_PAGE = 25;
 let orderDetails = {};
 
-// --- Referencias del DOM ---
+// DOM references
 const collageGrid = document.getElementById('collage-grid');
 const featuredContainer = document.getElementById('featured-grid');
 const offersGrid = document.getElementById('offers-grid');
@@ -64,11 +58,10 @@ const whatsappBtn = document.getElementById('whatsapp-btn');
 const closeSuccessBtn = document.getElementById('close-success-btn');
 const termsConsentCheckbox = document.getElementById('terms-consent-checkbox');
 
-const sizeSelect = document.getElementById('size-select');
-const colorSelect = document.getElementById('color-select');
+const sizeOptionsRow = document.getElementById('size-options');
+const colorOptionsRow = document.getElementById('color-options');
 const modalRequiredHint = document.getElementById('modal-required-hint');
 
-// --- Funciones de Ayuda ---
 const money = (v) => {
     const value = Math.floor(v);
     return value.toLocaleString('es-CO');
@@ -82,7 +75,7 @@ const shuffleArray = (array) => {
     return array;
 };
 
-// --- Carrusel de banner (sin cambios mayores) ---
+// Banner carousel (kept same)
 const bannerCarousel = document.getElementById('banner-carousel');
 const bannerDots = document.getElementById('banner-dots');
 if (bannerCarousel) {
@@ -151,28 +144,10 @@ if (bannerCarousel) {
             resetInterval();
         }
     });
-    let isDown = false,
-        startXMouse;
-    bannerCarousel.addEventListener('mousedown', e => {
-        isDown = true;
-        startXMouse = e.pageX;
-    });
-    bannerCarousel.addEventListener('mouseup', e => {
-        if (!isDown) return;
-        let diff = e.pageX - startXMouse;
-        if (diff > 50) {
-            currentBanner = (currentBanner - 1);
-            updateBanner();
-        } else if (diff < -50) {
-            nextBanner();
-        }
-        isDown = false;
-        resetInterval();
-    });
     resetInterval();
 }
 
-// --- Renderizado tarjetas (adaptadas) ---
+// Generate product card (price at bottom ensured by CSS)
 const generateProductCard = (p) => {
     let bestSellerTag = '';
     if (p.bestSeller) {
@@ -186,7 +161,6 @@ const generateProductCard = (p) => {
         stockClass = ' out-of-stock';
     }
 
-    // product card HTML: note description is truncated via CSS (-webkit-line-clamp)
     return `
       <div class="product-card${stockClass}" data-product-id="${p.id}">
         ${bestSellerTag}
@@ -211,7 +185,7 @@ const generateProductCard = (p) => {
     `;
 };
 
-// --- Renderizado con paginación (igual) ---
+// Render products (unchanged)
 function renderProducts(container, data, page = 1, perPage = 20, withPagination = false) {
     container.innerHTML = '';
     const paginationContainer = document.getElementById('pagination-container');
@@ -343,8 +317,8 @@ function renderPagination(currentPage, totalPages, data, perPage) {
     if (currentPage < totalPages) paginationContainer.appendChild(createBtn('Última', totalPages));
 }
 
-// Category carousel generator
 const generateCategoryCarousel = () => {
+    if (!categoryCarousel) return;
     categoryCarousel.innerHTML = '';
     const categories = Array.from(new Set(products.map(p => p.category))).map(c => ({ label: c }));
     const allItem = document.createElement('div');
@@ -361,7 +335,6 @@ const generateCategoryCarousel = () => {
     });
 };
 
-// Search handling
 searchInput.addEventListener('input', (e) => {
     const q = e.target.value.trim().toLowerCase();
     if (!q) {
@@ -384,12 +357,10 @@ const showDefaultSections = () => {
     const offers = shuffleArray(products.filter(p => p.isOffer)).slice(0, 25);
     renderProducts(featuredContainer, featured, 1, 25, false);
     renderProducts(offersGrid, offers, 1, 25, false);
-    // show hints on featured
     showImageHints(featuredContainer);
     enableTouchHints();
 };
 
-// Category click
 categoryCarousel.addEventListener('click', (ev) => {
     const img = ev.target.closest('.category-image');
     if (!img) return;
@@ -407,8 +378,9 @@ categoryCarousel.addEventListener('click', (ev) => {
     renderProducts(allFilteredContainer, filtered, 1, 20, true);
 });
 
-// Draggable category carousel (unchanged)
+// draggable category (kept)
 (function makeCarouselDraggable() {
+    if (!categoryCarousel) return;
     let isDown = false,
         startX, scrollLeft;
     categoryCarousel.addEventListener('mousedown', (e) => {
@@ -445,10 +417,11 @@ document.addEventListener('click', (e) => {
     }
     if (e.target.id === 'modal-add-to-cart-btn') {
         const qty = Math.max(1, parseInt(qtyInput.value) || 1);
-        const selectedSize = sizeSelect?.value || '';
-        const selectedColor = colorSelect?.value || '';
+        const selectedSizeBtn = sizeOptionsRow?.querySelector('.option-btn.selected');
+        const selectedColorBtn = colorOptionsRow?.querySelector('.option-btn.selected');
+        const selectedSize = selectedSizeBtn?.dataset?.value || '';
+        const selectedColor = selectedColorBtn?.dataset?.value || '';
 
-        // validate required selections
         if (!selectedSize || !selectedColor) {
             triggerRequiredAnimation();
             return;
@@ -459,7 +432,21 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// Modal helpers
+// option buttons delegation (selecting size/color)
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.option-btn');
+    if (!btn) return;
+    const parent = btn.parentElement;
+    // toggle single-selection within group
+    parent.querySelectorAll('.option-btn').forEach(b => {
+        b.classList.remove('selected');
+        b.setAttribute('aria-pressed', 'false');
+    });
+    btn.classList.add('selected');
+    btn.setAttribute('aria-pressed', 'true');
+});
+
+// Modals open/close helpers
 function showModal(modal) {
     modal.style.display = 'flex';
     modal.setAttribute('aria-hidden', 'false');
@@ -471,6 +458,7 @@ function closeModal(modal) {
 }
 
 [productModal, cartModal, checkoutModal, orderSuccessModal].forEach(modal => {
+    if (!modal) return;
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             closeModal(modal);
@@ -481,11 +469,11 @@ function closeModal(modal) {
     });
 });
 
-closeSuccessBtn.addEventListener('click', () => {
+closeSuccessBtn && closeSuccessBtn.addEventListener('click', () => {
     closeModal(orderSuccessModal);
 });
 
-// Open product modal and populate selects for size/color (required)
+// open product modal and populate option buttons for size/color
 function openProductModal(id) {
     const product = products.find(p => p.id === id);
     if (!product) return;
@@ -494,89 +482,96 @@ function openProductModal(id) {
     modalProductDescription.textContent = product.description || '';
     modalProductPrice.textContent = `$${money(product.price)}`;
     qtyInput.value = 1;
-    modalAddToCartBtn.dataset.id = product.id;
     updateCarousel(product.image || []);
-    // populate size and color selects
-    populateSelectOptions(sizeSelect, product.size || product.sizes || []);
-    populateSelectOptions(colorSelect, product.color || product.colors || []);
-    // hide hint
+    populateOptionButtons(sizeOptionsRow, product.size || product.sizes || []);
+    populateOptionButtons(colorOptionsRow, product.color || product.colors || []);
     modalRequiredHint.classList.remove('show');
-    // clear previous required-pulse classes
-    clearRequiredAnimation(sizeSelect);
-    clearRequiredAnimation(colorSelect);
+    sizeOptionsRow?.classList.remove('required-pulse');
+    colorOptionsRow?.classList.remove('required-pulse');
     showModal(productModal);
 }
 
-// helper: populate select with safe options (coerce to array)
-function populateSelectOptions(selectEl, raw) {
-    if (!selectEl) return;
-    selectEl.innerHTML = '<option value="">Selecciona</option>';
+function populateOptionButtons(container, rawOptions) {
+    if (!container) return;
+    container.innerHTML = '';
     let arr = [];
-    if (Array.isArray(raw)) arr = raw;
-    else if (typeof raw === 'string' && raw.trim().length) {
-        // try comma separated
-        arr = raw.split(',').map(s => s.trim()).filter(Boolean);
-    } else if (raw) {
-        arr = [raw];
+    if (Array.isArray(rawOptions)) arr = rawOptions;
+    else if (typeof rawOptions === 'string' && rawOptions.trim().length) {
+        arr = rawOptions.split(',').map(s => s.trim()).filter(Boolean);
+    } else if (rawOptions) {
+        arr = [rawOptions];
     }
-    // if empty, leave only placeholder
+    // If empty, show a disabled placeholder button
+    if (arr.length === 0) {
+        const b = document.createElement('button');
+        b.className = 'option-btn';
+        b.disabled = true;
+        b.textContent = '-';
+        container.appendChild(b);
+        return;
+    }
     arr.forEach(opt => {
-        const o = document.createElement('option');
-        o.value = opt;
-        o.textContent = opt;
-        selectEl.appendChild(o);
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'option-btn';
+        b.textContent = opt;
+        b.dataset.value = opt;
+        b.setAttribute('aria-pressed', 'false');
+        container.appendChild(b);
     });
 }
 
-// required animation when user missed selecting size/color
+// animation hint when missing selections
 function triggerRequiredAnimation() {
     modalRequiredHint.classList.add('show');
-    // pulse the ones missing
-    if (!sizeSelect.value) {
-        sizeSelect.classList.remove('required-pulse');
-        void sizeSelect.offsetWidth;
-        sizeSelect.classList.add('required-pulse');
+    if (!sizeOptionsRow.querySelector('.option-btn.selected')) {
+        sizeOptionsRow.classList.remove('required-pulse');
+        void sizeOptionsRow.offsetWidth;
+        sizeOptionsRow.classList.add('required-pulse');
     }
-    if (!colorSelect.value) {
-        colorSelect.classList.remove('required-pulse');
-        void colorSelect.offsetWidth;
-        colorSelect.classList.add('required-pulse');
+    if (!colorOptionsRow.querySelector('.option-btn.selected')) {
+        colorOptionsRow.classList.remove('required-pulse');
+        void colorOptionsRow.offsetWidth;
+        colorOptionsRow.classList.add('required-pulse');
     }
-    // remove pulse after animation
     setTimeout(() => {
-        sizeSelect.classList.remove('required-pulse');
-        colorSelect.classList.remove('required-pulse');
+        sizeOptionsRow.classList.remove('required-pulse');
+        colorOptionsRow.classList.remove('required-pulse');
         modalRequiredHint.classList.remove('show');
     }, 900);
 }
 
-function clearRequiredAnimation(el) {
-    if (!el) return;
-    el.classList.remove('required-pulse');
-}
-
-// --- Collage rendering: random order and random sizes each load ---
-function renderCollage(items = [], count = 12) {
+// Collage: place images in grid using random spans (1..3)
+function renderCollage(items = [], maxItems = 12) {
     if (!collageGrid) return;
     collageGrid.innerHTML = '';
-    const pool = shuffleArray(items.slice()); // shuffled copy
-    const take = pool.slice(0, Math.min(count, pool.length));
-    take.forEach(p => {
+    const pool = shuffleArray(items.slice());
+    const take = pool.slice(0, Math.min(maxItems, pool.length));
+    for (let i = 0; i < take.length; i++) {
+        const p = take[i];
         const div = document.createElement('div');
         div.className = 'collage-item';
-        // random width/height between min and max (in px) but responsive-friendly
-        const w = 120 + Math.floor(Math.random() * 200); // 120..320
-        const h = 100 + Math.floor(Math.random() * 220); // 100..320
-        div.style.width = `${w}px`;
-        div.style.height = `${h}px`;
-        div.innerHTML = `<img src="${p.image && p.image[0] ? p.image[0] : 'img/favicon.png'}" alt="${escapeHtml(p.name)}" loading="lazy" data-id="${p.id}"/>`;
+        const img = document.createElement('img');
+        img.src = (p.image && p.image[0]) ? p.image[0] : 'img/favicon.png';
+        img.alt = p.name || 'producto';
+        img.loading = 'lazy';
+        img.dataset.id = p.id;
+        div.appendChild(img);
+
+        // random spans 1..3 but prefer smaller spans for more tiles
+        const spanX = Math.random() < 0.25 ? 3 : (Math.random() < 0.35 ? 2 : 1);
+        const spanY = Math.random() < 0.25 ? 3 : (Math.random() < 0.35 ? 2 : 1);
+        div.style.gridColumnEnd = `span ${spanX}`;
+        div.style.gridRowEnd = `span ${spanY}`;
+
         div.addEventListener('click', () => openProductModal(p.id));
         collageGrid.appendChild(div);
-    });
+    }
 }
 
-// Carousel images update
+// Carousel images
 function updateCarousel(images) {
+    if (!carouselImagesContainer) return;
     carouselImagesContainer.innerHTML = '';
     if (!images || images.length === 0) {
         carouselImagesContainer.innerHTML = `<div class="carousel-image" style="display:flex;align-items:center;justify-content:center;background:#f3f3f3">Sin imagen</div>`;
@@ -596,13 +591,11 @@ prevBtn && prevBtn.addEventListener('click', () => {
     if (currentImageIndex > 0) currentImageIndex--;
     updateCarouselPosition();
 });
-
 nextBtn && nextBtn.addEventListener('click', () => {
     const imgs = carouselImagesContainer.querySelectorAll('.carousel-image');
     if (currentImageIndex < imgs.length - 1) currentImageIndex++;
     updateCarouselPosition();
 });
-
 function updateCarouselPosition() {
     const imgs = carouselImagesContainer.querySelectorAll('.carousel-image');
     if (imgs.length === 0) return;
@@ -611,8 +604,9 @@ function updateCarouselPosition() {
 }
 window.addEventListener('resize', updateCarouselPosition);
 
-// --- CART logic (updated to include size & color) ---
+// CART (includes size & color)
 function updateCart() {
+    if (!cartItemsContainer) return;
     cartItemsContainer.innerHTML = '';
     if (cart.length === 0) {
         cartItemsContainer.innerHTML = '<p class="empty-cart-msg">Tu carrito está vacío.</p>';
@@ -621,8 +615,7 @@ function updateCart() {
         cartTotalElement.textContent = money(0);
         return;
     }
-    let total = 0,
-        totalItems = 0;
+    let total = 0, totalItems = 0;
     cart.forEach((item, idx) => {
         total += item.price * item.qty;
         totalItems += item.qty;
@@ -653,106 +646,53 @@ function updateCart() {
 function addToCart(id, qty = 1, size = '', color = '') {
     const p = products.find(x => x.id === id);
     if (!p) return;
-
-    // verify required choices are present
     if (!size || !color) {
         alert('Seleccione talla y color antes de añadir al carrito.');
         return;
     }
-
-    // Verificar stock general (per-product). If you need size/color-specific stock, adapt server-side.
     const availableStock = p.stock || 0;
     const existingInCart = cart.find(i => i.id === id && i.size === size && i.color === color);
     const currentQtyInCart = existingInCart ? existingInCart.qty : 0;
-
     if (currentQtyInCart + qty > availableStock) {
         alert(`En el momento solo quedan ${availableStock} unidades.`);
         return;
     }
-
-    if (existingInCart) {
-        existingInCart.qty += qty;
-    } else {
-        cart.push({
-            id: p.id,
-            name: p.name,
-            price: p.price,
-            qty,
-            image: p.image && p.image[0] ? p.image[0] : 'img/favicon.png',
-            size,
-            color
-        });
-    }
-
+    if (existingInCart) existingInCart.qty += qty;
+    else cart.push({ id: p.id, name: p.name, price: p.price, qty, image: p.image && p.image[0] ? p.image[0] : 'img/favicon.png', size, color });
     updateCart();
-
-    // Mostrar el toast de confirmación con imagen y título
-    showAddToCartToast({
-        image: p.image && p.image[0] ? p.image[0] : 'img/favicon.png',
-        name: p.name,
-        qty
-    });
+    showAddToCartToast({ image: p.image && p.image[0] ? p.image[0] : 'img/favicon.png', name: p.name, qty });
 }
 
-/* Helper: escapar texto */
 function escapeHtml(str) {
     if (!str) return '';
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+    return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/* Toast */
 function showAddToCartToast({ image, name, qty = 1 }) {
     const existing = document.getElementById('add-to-cart-toast');
-    if (existing) {
-        existing.remove();
-    }
-
+    if (existing) existing.remove();
     const toast = document.createElement('div');
     toast.id = 'add-to-cart-toast';
     toast.className = 'add-to-cart-toast';
-
     const safeName = escapeHtml(name);
-
-    toast.innerHTML = `
-      <img src="${image}" alt="${safeName}" class="toast-img" loading="lazy" />
-      <div class="toast-text">
-        <div class="toast-title">${safeName}</div>
-        <div class="toast-sub">Añadido x${qty}</div>
-      </div>
-    `;
-
+    toast.innerHTML = `<img src="${image}" alt="${safeName}" class="toast-img" loading="lazy" /><div class="toast-text"><div class="toast-title">${safeName}</div><div class="toast-sub">Añadido x${qty}</div></div>`;
     document.body.appendChild(toast);
-
-    requestAnimationFrame(() => {
-        toast.classList.add('show');
-    });
-
+    requestAnimationFrame(() => toast.classList.add('show'));
     const VISIBLE_MS = 2000;
     setTimeout(() => {
-        toast.classList.remove('show');
-        toast.classList.add('hide');
-        toast.addEventListener('transitionend', () => {
-            toast.remove();
-        }, { once: true });
+        toast.classList.remove('show'); toast.classList.add('hide');
+        toast.addEventListener('transitionend', () => toast.remove(), { once: true });
     }, VISIBLE_MS);
 }
 
-// adjust quantity buttons inside cart
-cartItemsContainer.addEventListener('click', (e) => {
+cartItemsContainer && cartItemsContainer.addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-idx]');
     if (!btn) return;
     const idx = parseInt(btn.dataset.idx, 10);
     const op = btn.dataset.op;
-
     const productInCart = cart[idx];
     if (!productInCart) return;
     const originalProduct = products.find(p => p.id === productInCart.id);
-
     if (op === 'inc') {
         if ((productInCart.qty + 1) > (originalProduct.stock || 0)) {
             alert(`En el momento solo quedan ${originalProduct.stock} unidades.`);
@@ -767,12 +707,12 @@ cartItemsContainer.addEventListener('click', (e) => {
     updateCart();
 });
 
-cartBtn.addEventListener('click', () => {
+cartBtn && cartBtn.addEventListener('click', () => {
     showModal(cartModal);
     updateCart();
 });
 
-checkoutBtn.addEventListener('click', () => {
+checkoutBtn && checkoutBtn.addEventListener('click', () => {
     if (cart.length === 0) {
         alert('El carrito está vacío');
         return;
@@ -780,97 +720,55 @@ checkoutBtn.addEventListener('click', () => {
     showModal(checkoutModal);
 });
 
-finalizeBtn.addEventListener('click', () => {
+finalizeBtn && finalizeBtn.addEventListener('click', () => {
     const name = customerNameInput.value.trim();
     const address = customerAddressInput.value.trim();
     const payment = document.querySelector('input[name="payment"]:checked')?.value || '';
-    
     if (!termsConsentCheckbox.checked) {
         alert('Debes aceptar los Términos y Condiciones y la Política de Datos para continuar.');
         return;
     }
-
     if (!name || !address) {
         alert('Por favor completa nombre y dirección');
         return;
     }
-
-    orderDetails = {
-        name,
-        address,
-        payment,
-        items: [...cart],
-        total: cart.reduce((acc, item) => acc + item.price * item.qty, 0)
-    };
-
+    orderDetails = { name, address, payment, items: [...cart], total: cart.reduce((acc, item) => acc + item.price * item.qty, 0) };
     closeModal(checkoutModal);
     closeModal(cartModal);
     showOrderSuccessModal();
 });
 
 function showOrderSuccessModal() {
-    if (orderDetails.total) {
-        orderSuccessTotal.textContent = money(orderDetails.total);
-    }
+    if (orderDetails.total) orderSuccessTotal.textContent = money(orderDetails.total);
     showModal(orderSuccessModal);
 }
 
-// WhatsApp flow: saves order to DB and calls api/place-order (keeps original behavior)
-whatsappBtn.addEventListener('click', async () => {
-    if (Object.keys(orderDetails).length === 0) {
-        alert('No hay detalles del pedido para enviar.');
-        return;
-    }
-
-    if (!supabaseClient) {
-        alert('El cliente no está inicializado. Inténtalo de nuevo.');
-        return;
-    }
-
+// WhatsApp flow (kept)
+whatsappBtn && whatsappBtn.addEventListener('click', async () => {
+    if (Object.keys(orderDetails).length === 0) { alert('No hay detalles del pedido para enviar.'); return; }
+    if (!supabaseClient) { alert('El cliente no está inicializado. Inténtalo de nuevo.'); return; }
     try {
-        // guardar la orden (orders table)
         const { data: orderData, error: orderError } = await supabaseClient
             .from('orders')
             .insert([{
                 customer_name: orderDetails.name,
-                customer_address: orderDetails.address, 
+                customer_address: orderDetails.address,
                 payment_method: orderDetails.payment,
                 total_amount: orderDetails.total,
                 order_items: orderDetails.items,
                 order_status: 'Pendiente',
-            }])
-            .select();
+            }]).select();
+        if (orderError) { console.error('Error DB:', orderError); alert('Error al guardar la orden en DB: ' + orderError.message); return; }
 
-        if (orderError) {
-            console.error('Error al guardar la orden en DB:', orderError);
-            alert('Error al guardar la orden en DB: ' + orderError.message);
-            return;
-        }
-        
-        // llamar API Route local
         const response = await fetch('api/place-order', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                orderDetails,
-                products 
-            })
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderDetails, products })
         });
 
-        let result = {};
-        
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('API Route Falló con status:', response.status, 'Respuesta:', errorText);
-        } else {
-             try {
-                result = await response.json();
-             } catch (e) {
-                 console.warn('Advertencia: El API Route devolvió una respuesta OK, pero no era JSON válido:', e.message);
-             }
+            console.error('API Route Falló:', response.status, errorText);
         }
 
-        // preparar y abrir WhatsApp
         const whatsappNumber = '573227671829';
         let message = `Hola mi nombre es ${encodeURIComponent(orderDetails.name)}.%0AHe realizado un pedido para la dirección ${encodeURIComponent(orderDetails.address)}.%0A%0A`;
         orderDetails.items.forEach(item => {
@@ -879,14 +777,12 @@ whatsappBtn.addEventListener('click', async () => {
         message += `%0ATotal: $${money(orderDetails.total)}`;
         const link = `https://wa.me/${whatsappNumber}?text=${message}`;
         window.open(link, '_blank');
-        
-        // limpiar UI y recargar productos desde supabase para sincronizar stock
-        cart = []; 
-        orderDetails = {}; 
-        
-        products = await fetchProductsFromSupabase(); 
-        showDefaultSections(); 
-        updateCart(); 
+
+        cart = []; orderDetails = {};
+        products = await fetchProductsFromSupabase();
+        renderCollage(products, 12);
+        showDefaultSections();
+        updateCart();
         closeModal(orderSuccessModal);
 
     } catch (error) {
@@ -895,13 +791,11 @@ whatsappBtn.addEventListener('click', async () => {
     }
 });
 
-// PWA installation prompt handling (unchanged)
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
     installBanner.classList.add('visible');
 });
-
 installPromptBtn && installPromptBtn.addEventListener('click', async () => {
     if (!deferredPrompt) return;
     installBanner.classList.remove('visible');
@@ -909,25 +803,18 @@ installPromptBtn && installPromptBtn.addEventListener('click', async () => {
     await deferredPrompt.userChoice;
     deferredPrompt = null;
 });
-
 installCloseBtn && installCloseBtn.addEventListener('click', () => installBanner.classList.remove('visible'));
 
-// --- Funciones DB ---
+// DB fetch
 const fetchProductsFromSupabase = async () => {
-    if (!supabaseClient) {
-        return []; 
-    }
+    if (!supabaseClient) return [];
     try {
-        const { data, error } = await supabaseClient
-            .from('products')
-            .select('*');
-        if (error) {
-            throw error;
-        }
+        const { data, error } = await supabaseClient.from('products').select('*');
+        if (error) throw error;
         return data;
     } catch (err) {
         console.error('Error al cargar los productos:', err.message);
-        alert('Hubo un error al cargar los productos. Por favor, revisa la consola para más detalles.');
+        alert('Hubo un error al cargar los productos. Revisa la consola.');
         return [];
     }
 };
@@ -935,27 +822,17 @@ const fetchProductsFromSupabase = async () => {
 const loadConfigAndInitSupabase = async () => {
     try {
         const response = await fetch('api/get-config');
-        
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('Error del API Route api/get-config:', errorText);
-            throw new Error(`Fallo al cargar la configuración desde V: ${response.status} ${response.statusText}`);
+            console.error('Error api/get-config:', errorText);
+            throw new Error(`Fallo al cargar la configuración: ${response.status}`);
         }
-        
         const config = await response.json();
-        
-        if (!config.url || !config.anonKey) {
-             throw new Error("El API Route no retornó las claves de DB. Revisa las Variables de Entorno en Vercel.");
-        }
-
-        SB_URL = config.url;
-        SB_ANON_KEY = config.anonKey;
-
+        if (!config.url || !config.anonKey) throw new Error("El API Route no retornó las claves de DB.");
+        SB_URL = config.url; SB_ANON_KEY = config.anonKey;
         supabaseClient = createClient(SB_URL, SB_ANON_KEY);
-
         products = await fetchProductsFromSupabase();
         if (products.length > 0) {
-            // render collage with random image-only cards first
             renderCollage(products, 12);
             showDefaultSections();
             generateCategoryCarousel();
@@ -964,11 +841,10 @@ const loadConfigAndInitSupabase = async () => {
         }
         updateCart();
     } catch (error) {
-        console.error('Error FATAL al iniciar la aplicación:', error);
-        
+        console.error('Error FATAL al iniciar la app:', error);
         const loadingMessage = document.createElement('div');
         loadingMessage.style = 'position:fixed;top:0;left:0;width:100%;height:100%;background:white;display:flex;align-items:center;justify-content:center;color:red;font-weight:bold;text-align:center;padding:20px;z-index:9999';
-        loadingMessage.textContent = 'ERROR DE INICIALIZACIÓN: No se pudo cargar la configuración de la tienda. Revisa la consola para más detalles (Faltan variables de entorno en Vercel).';
+        loadingMessage.textContent = 'ERROR DE INICIALIZACIÓN: No se pudo cargar la configuración de la tienda. Revisa la consola para más detalles.';
         document.body.appendChild(loadingMessage);
     }
 };

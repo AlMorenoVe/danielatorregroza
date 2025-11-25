@@ -4,56 +4,16 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     
-    <!-- SEO Básico y Título -->
     <title>Catalogo de Vestuario | Donde Peter</title>
     <meta name="description" content="Catálogo de vestuario. Consulta y compra prendas directamente desde nuestra tienda." />
-    <meta name="keywords" content="ropa, moda, catálogo, prendas, tallas, colores, Donde Peter">
-
-    <!-- URL Canónica -->
-    <link rel="canonical" href="https://dondepeter.vercel.app/" />
-
-    <!-- SEO Open Graph -->
-    <meta property="og:title" content="Catálogo de Vestuario | Donde Peter" />
-    <meta property="og:description" content="Explora y compra prendas de vestir. Selecciona talla y color antes de añadir al carrito." />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://dondepeter.vercel.app/" />
-    <meta property="og:image" content="https://dondepeter.vercel.app/img/favicon.png" />
-    <meta property="og:image:alt" content="Donde Peter Logo" />
-
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="Catálogo de Vestuario Donde Peter">
-    <meta name="twitter:description" content="Selecciona talla y color antes de pedir.">
-    <meta name="twitter:image" content="https://dondepeter.vercel.app/img/favicon.png">
-
-    <!-- PWA y Meta de Tema -->
     <link rel="manifest" href="./manifest.json" />
     <meta name="theme-color" content="#721919" />
     <link rel="icon" href="https://dondepeter.vercel.app/img/favicon.png" />
     <link rel="apple-touch-icon" href="https://dondepeter.vercel.app/img/favicon.png">
-
-    <!-- Fuentes y Estilos Externos -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
-    
-    <!-- Scripts Externos (Sin modificar) -->
-    <script charset="UTF-8" src="//web.webpushs.com/js/push/1ed281446e2e741d69c9c9a386b5a047_1.js" async></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <!-- JSON-LD -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Store",
-      "name": "Donde Peter",
-      "image": "https://dondepeter.vercel.app/img/favicon.png",
-      "url": "https://dondepeter.vercel.app/",
-      "telephone": "+57-3227671829"
-    }
-    </script>
 </head>
 <body>
     <div class="page-container">
@@ -72,12 +32,6 @@
             </button>
         </nav>
 
-        <!-- COLLAGE: sección inicial con tarjetas solo imagen, orden y tamaños aleatorios -->
-        <section id="collage-section" class="collage-section">
-            <div id="collage-grid" class="collage-grid" aria-hidden="false"></div>
-        </section>
-
-        <section class="main-carousel-wrapper">
         <section class="banner-section">
           <div class="banner-carousel" id="banner-carousel">
             <div class="banner-slide"><img src="https://ndqzyplsiqigsynweihk.supabase.co/storage/v1/object/public/donde_peter/baner/baner1.webp" alt="Promoción 1"></div>
@@ -88,7 +42,6 @@
             <div class="banner-slide"><img src="https://ndqzyplsiqigsynweihk.supabase.co/storage/v1/object/public/donde_peter/baner/baner6.webp" alt="Promoción 6"></div>
           </div>
           <div class="banner-dots" id="banner-dots"></div>
-        </section>
         </section>
 
         <div class="ticker-wrapper">
@@ -105,6 +58,11 @@
                 <div id="category-carousel" class="category-carousel"></div>
             </div>
         </nav>
+
+        <!-- COLLAGE: colocado justo después de categorías y antes de destacados -->
+        <section id="collage-section" class="collage-section">
+            <div id="collage-grid" class="collage-grid" aria-hidden="false"></div>
+        </section>
 
         <main class="menu-container">
             <section id="filtered-section" class="menu-section" style="display:none;">
@@ -131,7 +89,6 @@
             </section>
         </main>
 
-        <!-- PRODUCT MODAL: ahora incluye selección de talla y color obligatorias -->
         <div id="productModal" class="modal" aria-hidden="true">
             <div class="modal-content-wrapper">
                 <div class="modal-card">
@@ -147,17 +104,13 @@
                         <p id="modal-product-price" class="price"></p>
 
                         <div class="form-group">
-                          <label for="size-select">Talla (obligatorio)</label>
-                          <select id="size-select" aria-required="true">
-                            <option value="">Selecciona talla</option>
-                          </select>
+                          <label>Talla (obligatorio)</label>
+                          <div id="size-options" class="options-row" role="group" aria-label="Tallas disponibles"></div>
                         </div>
 
                         <div class="form-group">
-                          <label for="color-select">Color (obligatorio)</label>
-                          <select id="color-select" aria-required="true">
-                            <option value="">Selecciona color</option>
-                          </select>
+                          <label>Color (obligatorio)</label>
+                          <div id="color-options" class="options-row" role="group" aria-label="Colores disponibles"></div>
                         </div>
 
                         <div class="qty-row">
@@ -171,7 +124,6 @@
             </div>
         </div>
 
-        <!-- CART / CHECKOUT / SUCCESS modals (unchanged structure, kept for compatibility) -->
         <div id="cartModal" class="modal" aria-hidden="true">
             <div class="modal-content-wrapper">
                 <div class="cart-modal-card">
