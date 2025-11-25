@@ -1,17 +1,12 @@
 /**
  * @license
- * Copyright © 2025 Tecnología y Soluciones Informáticas. Todos los derechos reservados.
+ * Copyright © 2025 Tecnología y Soluciones Informáticas.
  *
- * DONDE PETER PWA
- *
- * Este software es propiedad confidencial y exclusiva de TECSIN.
- * El permiso de uso de este software es temporal para pruebas en Donde Peter.
- *
- * Queda estrictamente prohibida la copia, modificación, distribución,
- * ingeniería inversa o cualquier otro uso no autorizado de este código
- * sin el consentimiento explícito por escrito del autor.
- *
- * Para más información, contactar a: sidsoporte@proton.me
+ * Adaptado para catálogo de vestuario:
+ * - Modal obliga a elegir talla y color.
+ * - Collage inicial con tarjetas solo imagen en tamaño/orden aleatorio.
+ * - Precio siempre alineado abajo.
+ * - Descripción truncada en tarjeta, completa en modal.
  */
 
 const { createClient } = supabase;
@@ -30,6 +25,7 @@ const PRODUCTS_PER_PAGE = 25;
 let orderDetails = {};
 
 // --- Referencias del DOM ---
+const collageGrid = document.getElementById('collage-grid');
 const featuredContainer = document.getElementById('featured-grid');
 const offersGrid = document.getElementById('offers-grid');
 const allFilteredContainer = document.getElementById('all-filtered-products');
@@ -68,6 +64,9 @@ const whatsappBtn = document.getElementById('whatsapp-btn');
 const closeSuccessBtn = document.getElementById('close-success-btn');
 const termsConsentCheckbox = document.getElementById('terms-consent-checkbox');
 
+const sizeSelect = document.getElementById('size-select');
+const colorSelect = document.getElementById('color-select');
+const modalRequiredHint = document.getElementById('modal-required-hint');
 
 // --- Funciones de Ayuda ---
 const money = (v) => {
@@ -83,7 +82,7 @@ const shuffleArray = (array) => {
     return array;
 };
 
-// --- Lógica del carrusel de banner ---
+// --- Carrusel de banner (sin cambios mayores) ---
 const bannerCarousel = document.getElementById('banner-carousel');
 const bannerDots = document.getElementById('banner-dots');
 if (bannerCarousel) {
@@ -173,7 +172,7 @@ if (bannerCarousel) {
     resetInterval();
 }
 
-// --- Funciones para renderizar productos ---
+// --- Renderizado tarjetas (adaptadas) ---
 const generateProductCard = (p) => {
     let bestSellerTag = '';
     if (p.bestSeller) {
@@ -187,11 +186,12 @@ const generateProductCard = (p) => {
         stockClass = ' out-of-stock';
     }
 
+    // product card HTML: note description is truncated via CSS (-webkit-line-clamp)
     return `
       <div class="product-card${stockClass}" data-product-id="${p.id}">
         ${bestSellerTag}
         <div class="image-wrap">
-          <img src="${p.image[0]}" alt="${p.name}" class="product-image modal-trigger" data-id="${p.id}" loading="lazy" />
+          <img src="${p.image && p.image[0] ? p.image[0] : 'img/favicon.png'}" alt="${escapeHtml(p.name)}" class="product-image modal-trigger" data-id="${p.id}" loading="lazy" />
           <div class="image-hint" aria-hidden="true">
             <i class="fas fa-hand-point-up" aria-hidden="true"></i>
             <span>Presiona para ver</span>
@@ -200,8 +200,8 @@ const generateProductCard = (p) => {
         ${stockOverlay}
         <div class="product-info">
           <div>
-            <div class="product-name">${p.name}</div>
-            <div class="product-description">${p.description}</div>
+            <div class="product-name">${escapeHtml(p.name)}</div>
+            <div class="product-description">${escapeHtml(p.description || '')}</div>
           </div>
           <div style="margin-top:8px">
             <div class="product-price">$${money(p.price)}</div>
@@ -211,8 +211,7 @@ const generateProductCard = (p) => {
     `;
 };
 
-
-// --- Renderizado con paginación ---
+// --- Renderizado con paginación (igual) ---
 function renderProducts(container, data, page = 1, perPage = 20, withPagination = false) {
     container.innerHTML = '';
     const paginationContainer = document.getElementById('pagination-container');
@@ -235,19 +234,14 @@ function renderProducts(container, data, page = 1, perPage = 20, withPagination 
 }
 
 function showImageHints(container) {
-    // Mostrar el hint de forma temporal en las primeras tarjetas (para indicar acción)
     try {
         const hints = container.querySelectorAll('.image-hint');
-        // Mostrar en las primeras 6 tarjetas o las que haya
         const max = Math.min(6, hints.length);
         for (let i = 0; i < max; i++) {
             const h = hints[i];
-            // añadir clase que dispara la animación/fade
             h.classList.add('show-hint');
-            // animar con pequeño delay escalonado para efecto cascada
             h.style.transitionDelay = `${i * 120}ms`;
         }
-        // quitar la clase después de X ms (por ejemplo 2200ms)
         setTimeout(() => {
             for (let i = 0; i < max; i++) {
                 const h = hints[i];
@@ -258,7 +252,6 @@ function showImageHints(container) {
             }
         }, 2200);
     } catch (err) {
-        // no bloquear si falla
         console.warn('showImageHints err', err);
     }
 }
@@ -267,37 +260,25 @@ function enableTouchHints() {
   let lastTouchedCard = null;
   let lastTouchMoved = false;
 
-  // Mostrar hint al tocar una tarjeta (touchstart)
   function onTouchStart(e) {
     lastTouchMoved = false;
     const card = e.target.closest('.product-card');
     if (!card) return;
-
-    // No mostrar si el target es un control interactivo (botón, input, enlace)
     if (e.target.closest('button, a, input, textarea, select')) return;
-
     const hint = card.querySelector('.image-hint');
     if (!hint) return;
-
-    // Mostrar hint (usa la misma clase .show-hint que el CSS de hint)
     hint.classList.add('show-hint');
-
-    // Guardar y limpiar timeout anterior si existe
     if (card._hintTimeout) {
       clearTimeout(card._hintTimeout);
       card._hintTimeout = null;
     }
-
-    // Ocultar automát. después de X ms
     card._hintTimeout = setTimeout(() => {
       hint.classList.remove('show-hint');
       card._hintTimeout = null;
     }, 2200);
-
     lastTouchedCard = card;
   }
 
-  // Si detectamos movimiento, lo interpretamos como scroll y ocultamos el hint
   function onTouchMove() {
     lastTouchMoved = true;
     if (lastTouchedCard) {
@@ -311,12 +292,10 @@ function enableTouchHints() {
     }
   }
 
-  // Al terminar el touch, si fue un tap (no hubo movimiento) mantenemos el hint un poco
   function onTouchEnd() {
     if (!lastTouchedCard) return;
     const h = lastTouchedCard.querySelector('.image-hint');
     if (h && !lastTouchMoved) {
-      // mantener un poco visible para que el usuario lo note al tocar
       setTimeout(() => {
         h.classList.remove('show-hint');
       }, 700);
@@ -330,7 +309,6 @@ function enableTouchHints() {
     lastTouchedCard = null;
   }
 
-  // Delegación global ligera: passive para no bloquear scroll
   document.addEventListener('touchstart', onTouchStart, { passive: true });
   document.addEventListener('touchmove', onTouchMove, { passive: true });
   document.addEventListener('touchend', onTouchEnd, { passive: true });
@@ -365,6 +343,7 @@ function renderPagination(currentPage, totalPages, data, perPage) {
     if (currentPage < totalPages) paginationContainer.appendChild(createBtn('Última', totalPages));
 }
 
+// Category carousel generator
 const generateCategoryCarousel = () => {
     categoryCarousel.innerHTML = '';
     const categories = Array.from(new Set(products.map(p => p.category))).map(c => ({ label: c }));
@@ -382,13 +361,14 @@ const generateCategoryCarousel = () => {
     });
 };
 
+// Search handling
 searchInput.addEventListener('input', (e) => {
     const q = e.target.value.trim().toLowerCase();
     if (!q) {
         showDefaultSections();
         return;
     }
-    const filtered = products.filter(p => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
+    const filtered = products.filter(p => (p.name || '').toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q) || (p.category || '').toLowerCase().includes(q));
     filteredSection.style.display = 'block';
     featuredSection.style.display = 'none';
     offersSection.style.display = 'none';
@@ -404,8 +384,12 @@ const showDefaultSections = () => {
     const offers = shuffleArray(products.filter(p => p.isOffer)).slice(0, 25);
     renderProducts(featuredContainer, featured, 1, 25, false);
     renderProducts(offersGrid, offers, 1, 25, false);
+    // show hints on featured
+    showImageHints(featuredContainer);
+    enableTouchHints();
 };
 
+// Category click
 categoryCarousel.addEventListener('click', (ev) => {
     const img = ev.target.closest('.category-image');
     if (!img) return;
@@ -415,7 +399,7 @@ categoryCarousel.addEventListener('click', (ev) => {
         showDefaultSections();
         return;
     }
-    const filtered = products.filter(p => p.category.toLowerCase() === cat.toLowerCase());
+    const filtered = products.filter(p => (p.category || '').toLowerCase() === cat.toLowerCase());
     filteredSection.style.display = 'block';
     featuredSection.style.display = 'none';
     offersSection.style.display = 'none';
@@ -423,6 +407,7 @@ categoryCarousel.addEventListener('click', (ev) => {
     renderProducts(allFilteredContainer, filtered, 1, 20, true);
 });
 
+// Draggable category carousel (unchanged)
 (function makeCarouselDraggable() {
     let isDown = false,
         startX, scrollLeft;
@@ -452,6 +437,7 @@ categoryCarousel.addEventListener('click', (ev) => {
     });
 })();
 
+// Delegated click handling for product modal and add-to-cart
 document.addEventListener('click', (e) => {
     if (e.target.closest('.modal-trigger')) {
         const id = e.target.dataset.id;
@@ -459,12 +445,21 @@ document.addEventListener('click', (e) => {
     }
     if (e.target.id === 'modal-add-to-cart-btn') {
         const qty = Math.max(1, parseInt(qtyInput.value) || 1);
-        addToCart(currentProduct.id, qty);
+        const selectedSize = sizeSelect?.value || '';
+        const selectedColor = colorSelect?.value || '';
+
+        // validate required selections
+        if (!selectedSize || !selectedColor) {
+            triggerRequiredAnimation();
+            return;
+        }
+
+        addToCart(currentProduct.id, qty, selectedSize, selectedColor);
         closeModal(productModal);
     }
 });
 
-// --- Lógica de Modales ---
+// Modal helpers
 function showModal(modal) {
     modal.style.display = 'flex';
     modal.setAttribute('aria-hidden', 'false');
@@ -490,27 +485,97 @@ closeSuccessBtn.addEventListener('click', () => {
     closeModal(orderSuccessModal);
 });
 
+// Open product modal and populate selects for size/color (required)
 function openProductModal(id) {
     const product = products.find(p => p.id === id);
     if (!product) return;
     currentProduct = product;
     modalProductName.textContent = product.name;
-    modalProductDescription.textContent = product.description;
+    modalProductDescription.textContent = product.description || '';
     modalProductPrice.textContent = `$${money(product.price)}`;
     qtyInput.value = 1;
     modalAddToCartBtn.dataset.id = product.id;
     updateCarousel(product.image || []);
+    // populate size and color selects
+    populateSelectOptions(sizeSelect, product.size || product.sizes || []);
+    populateSelectOptions(colorSelect, product.color || product.colors || []);
+    // hide hint
+    modalRequiredHint.classList.remove('show');
+    // clear previous required-pulse classes
+    clearRequiredAnimation(sizeSelect);
+    clearRequiredAnimation(colorSelect);
     showModal(productModal);
 }
 
-// --- Anuncios ---
-document.querySelectorAll('.ad-image').forEach(img => {
-    img.addEventListener('click', () => {
-        const id = img.dataset.productId;
-        openProductModal(id);
+// helper: populate select with safe options (coerce to array)
+function populateSelectOptions(selectEl, raw) {
+    if (!selectEl) return;
+    selectEl.innerHTML = '<option value="">Selecciona</option>';
+    let arr = [];
+    if (Array.isArray(raw)) arr = raw;
+    else if (typeof raw === 'string' && raw.trim().length) {
+        // try comma separated
+        arr = raw.split(',').map(s => s.trim()).filter(Boolean);
+    } else if (raw) {
+        arr = [raw];
+    }
+    // if empty, leave only placeholder
+    arr.forEach(opt => {
+        const o = document.createElement('option');
+        o.value = opt;
+        o.textContent = opt;
+        selectEl.appendChild(o);
     });
-});
+}
 
+// required animation when user missed selecting size/color
+function triggerRequiredAnimation() {
+    modalRequiredHint.classList.add('show');
+    // pulse the ones missing
+    if (!sizeSelect.value) {
+        sizeSelect.classList.remove('required-pulse');
+        void sizeSelect.offsetWidth;
+        sizeSelect.classList.add('required-pulse');
+    }
+    if (!colorSelect.value) {
+        colorSelect.classList.remove('required-pulse');
+        void colorSelect.offsetWidth;
+        colorSelect.classList.add('required-pulse');
+    }
+    // remove pulse after animation
+    setTimeout(() => {
+        sizeSelect.classList.remove('required-pulse');
+        colorSelect.classList.remove('required-pulse');
+        modalRequiredHint.classList.remove('show');
+    }, 900);
+}
+
+function clearRequiredAnimation(el) {
+    if (!el) return;
+    el.classList.remove('required-pulse');
+}
+
+// --- Collage rendering: random order and random sizes each load ---
+function renderCollage(items = [], count = 12) {
+    if (!collageGrid) return;
+    collageGrid.innerHTML = '';
+    const pool = shuffleArray(items.slice()); // shuffled copy
+    const take = pool.slice(0, Math.min(count, pool.length));
+    take.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'collage-item';
+        // random width/height between min and max (in px) but responsive-friendly
+        const w = 120 + Math.floor(Math.random() * 200); // 120..320
+        const h = 100 + Math.floor(Math.random() * 220); // 100..320
+        div.style.width = `${w}px`;
+        div.style.height = `${h}px`;
+        div.innerHTML = `<img src="${p.image && p.image[0] ? p.image[0] : 'img/favicon.png'}" alt="${escapeHtml(p.name)}" loading="lazy" data-id="${p.id}"/>`;
+        div.addEventListener('click', () => openProductModal(p.id));
+        collageGrid.appendChild(div);
+    });
+}
+
+// Carousel images update
 function updateCarousel(images) {
     carouselImagesContainer.innerHTML = '';
     if (!images || images.length === 0) {
@@ -527,12 +592,12 @@ function updateCarousel(images) {
     carouselImagesContainer.style.transform = `translateX(0)`;
 }
 
-prevBtn.addEventListener('click', () => {
+prevBtn && prevBtn.addEventListener('click', () => {
     if (currentImageIndex > 0) currentImageIndex--;
     updateCarouselPosition();
 });
 
-nextBtn.addEventListener('click', () => {
+nextBtn && nextBtn.addEventListener('click', () => {
     const imgs = carouselImagesContainer.querySelectorAll('.carousel-image');
     if (currentImageIndex < imgs.length - 1) currentImageIndex++;
     updateCarouselPosition();
@@ -546,6 +611,7 @@ function updateCarouselPosition() {
 }
 window.addEventListener('resize', updateCarouselPosition);
 
+// --- CART logic (updated to include size & color) ---
 function updateCart() {
     cartItemsContainer.innerHTML = '';
     if (cart.length === 0) {
@@ -562,7 +628,21 @@ function updateCart() {
         totalItems += item.qty;
         const div = document.createElement('div');
         div.className = 'cart-item';
-        div.innerHTML = `<div style="display:flex;align-items:center;gap:8px;"><img src="${item.image}" alt="${item.name}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;"><div><strong>${item.name}</strong><div style="font-size:.9rem;color:#666">${item.qty} x $${money(item.price)}</div></div></div><div class="controls"><button class="qty-btn" data-idx="${idx}" data-op="dec">-</button><button class="qty-btn" data-idx="${idx}" data-op="inc">+</button></div>`;
+        div.innerHTML = `
+          <div style="display:flex;align-items:center;gap:8px;">
+            <img src="${item.image}" alt="${escapeHtml(item.name)}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;">
+            <div style="min-width:160px;">
+              <div style="font-weight:700">${escapeHtml(item.name)}</div>
+              <div style="font-size:0.86rem;color:#666">Talla: ${escapeHtml(item.size || '')} • Color: ${escapeHtml(item.color || '')}</div>
+              <div style="font-size:0.86rem;color:#666">Precio: $${money(item.price)}</div>
+            </div>
+          </div>
+          <div class="controls">
+            <button class="qty-btn" data-idx="${idx}" data-op="dec">-</button>
+            <div style="min-width:26px;text-align:center">${item.qty}</div>
+            <button class="qty-btn" data-idx="${idx}" data-op="inc">+</button>
+          </div>
+        `;
         cartItemsContainer.appendChild(div);
     });
     cartBadge.style.display = 'flex';
@@ -570,13 +650,19 @@ function updateCart() {
     cartTotalElement.textContent = money(total);
 }
 
-function addToCart(id, qty = 1) {
+function addToCart(id, qty = 1, size = '', color = '') {
     const p = products.find(x => x.id === id);
     if (!p) return;
 
-    // Verificar si hay suficiente stock
+    // verify required choices are present
+    if (!size || !color) {
+        alert('Seleccione talla y color antes de añadir al carrito.');
+        return;
+    }
+
+    // Verificar stock general (per-product). If you need size/color-specific stock, adapt server-side.
     const availableStock = p.stock || 0;
-    const existingInCart = cart.find(i => i.id === id);
+    const existingInCart = cart.find(i => i.id === id && i.size === size && i.color === color);
     const currentQtyInCart = existingInCart ? existingInCart.qty : 0;
 
     if (currentQtyInCart + qty > availableStock) {
@@ -592,7 +678,9 @@ function addToCart(id, qty = 1) {
             name: p.name,
             price: p.price,
             qty,
-            image: p.image[0]
+            image: p.image && p.image[0] ? p.image[0] : 'img/favicon.png',
+            size,
+            color
         });
     }
 
@@ -606,7 +694,7 @@ function addToCart(id, qty = 1) {
     });
 }
 
-/* Helper: escapar texto para evitar inyección en el toast */
+/* Helper: escapar texto */
 function escapeHtml(str) {
     if (!str) return '';
     return String(str)
@@ -617,9 +705,8 @@ function escapeHtml(str) {
         .replace(/>/g, '&gt;');
 }
 
-/* Helper: crea y anima el toast (se añade al body y se elimina tras el tiempo especificado) */
+/* Toast */
 function showAddToCartToast({ image, name, qty = 1 }) {
-    // Si ya existe un toast activo, lo removemos para re-crear (evita duplicados)
     const existing = document.getElementById('add-to-cart-toast');
     if (existing) {
         existing.remove();
@@ -639,27 +726,23 @@ function showAddToCartToast({ image, name, qty = 1 }) {
       </div>
     `;
 
-    // Añadir al DOM
     document.body.appendChild(toast);
 
-    // Forzar reflow y disparar la animación CSS
-    // (usa requestAnimationFrame para asegurar aplicación de la clase 'show')
     requestAnimationFrame(() => {
         toast.classList.add('show');
     });
 
-    // Tiempo visible y salida animada
     const VISIBLE_MS = 2000;
     setTimeout(() => {
         toast.classList.remove('show');
         toast.classList.add('hide');
-        // eliminar al terminar la transición
         toast.addEventListener('transitionend', () => {
             toast.remove();
         }, { once: true });
     }, VISIBLE_MS);
 }
 
+// adjust quantity buttons inside cart
 cartItemsContainer.addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-idx]');
     if (!btn) return;
@@ -667,6 +750,7 @@ cartItemsContainer.addEventListener('click', (e) => {
     const op = btn.dataset.op;
 
     const productInCart = cart[idx];
+    if (!productInCart) return;
     const originalProduct = products.find(p => p.id === productInCart.id);
 
     if (op === 'inc') {
@@ -731,6 +815,7 @@ function showOrderSuccessModal() {
     showModal(orderSuccessModal);
 }
 
+// WhatsApp flow: saves order to DB and calls api/place-order (keeps original behavior)
 whatsappBtn.addEventListener('click', async () => {
     if (Object.keys(orderDetails).length === 0) {
         alert('No hay detalles del pedido para enviar.');
@@ -743,7 +828,7 @@ whatsappBtn.addEventListener('click', async () => {
     }
 
     try {
-        // 1. Guardar la orden en DB (tabla 'orders')
+        // guardar la orden (orders table)
         const { data: orderData, error: orderError } = await supabaseClient
             .from('orders')
             .insert([{
@@ -757,13 +842,12 @@ whatsappBtn.addEventListener('click', async () => {
             .select();
 
         if (orderError) {
-           
             console.error('Error al guardar la orden en DB:', orderError);
             alert('Error al guardar la orden en DB: ' + orderError.message);
             return;
         }
         
-        // 2. Intentar llamar al API Route
+        // llamar API Route local
         const response = await fetch('api/place-order', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -786,17 +870,17 @@ whatsappBtn.addEventListener('click', async () => {
              }
         }
 
-        // 3. Enviar mensaje de WhatsApp
+        // preparar y abrir WhatsApp
         const whatsappNumber = '573227671829';
-        let message = `Hola mi nombre es ${encodeURIComponent(orderDetails.name)}.%0AHe realizado un pedido para la dirección ${encodeURIComponent(orderDetails.address)} quiero confirmar el pago en ${encodeURIComponent(orderDetails.payment)}.%0A%0A--- Mi pedido es: ---%0A`;
+        let message = `Hola mi nombre es ${encodeURIComponent(orderDetails.name)}.%0AHe realizado un pedido para la dirección ${encodeURIComponent(orderDetails.address)}.%0A%0A`;
         orderDetails.items.forEach(item => {
-            message += `- ${encodeURIComponent(item.name)} x${item.qty} = $${money(item.price * item.qty)}%0A`;
+            message += `- ${encodeURIComponent(item.name)} (Talla: ${encodeURIComponent(item.size || '-')}, Color: ${encodeURIComponent(item.color || '-')}) x${item.qty} = $${money(item.price * item.qty)}%0A`;
         });
         message += `%0ATotal: $${money(orderDetails.total)}`;
         const link = `https://wa.me/${whatsappNumber}?text=${message}`;
         window.open(link, '_blank');
         
-        // 4. Limpiar y actualizar UI
+        // limpiar UI y recargar productos desde supabase para sincronizar stock
         cart = []; 
         orderDetails = {}; 
         
@@ -806,12 +890,12 @@ whatsappBtn.addEventListener('click', async () => {
         closeModal(orderSuccessModal);
 
     } catch (error) {
-        
         alert('Error al procesar el pedido: ' + error.message);
         console.error('Fallo en el pedido:', error);
     }
 });
 
+// PWA installation prompt handling (unchanged)
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
@@ -828,10 +912,9 @@ installPromptBtn && installPromptBtn.addEventListener('click', async () => {
 
 installCloseBtn && installCloseBtn.addEventListener('click', () => installBanner.classList.remove('visible'));
 
-// --- Funciones de DB ---
+// --- Funciones DB ---
 const fetchProductsFromSupabase = async () => {
     if (!supabaseClient) {
-        
         return []; 
     }
     try {
@@ -851,7 +934,6 @@ const fetchProductsFromSupabase = async () => {
 
 const loadConfigAndInitSupabase = async () => {
     try {
-        
         const response = await fetch('api/get-config');
         
         if (!response.ok) {
@@ -869,24 +951,26 @@ const loadConfigAndInitSupabase = async () => {
         SB_URL = config.url;
         SB_ANON_KEY = config.anonKey;
 
-        
         supabaseClient = createClient(SB_URL, SB_ANON_KEY);
 
         products = await fetchProductsFromSupabase();
         if (products.length > 0) {
+            // render collage with random image-only cards first
+            renderCollage(products, 12);
             showDefaultSections();
             generateCategoryCarousel();
+        } else {
+            renderCollage([], 0);
         }
         updateCart();
     } catch (error) {
         console.error('Error FATAL al iniciar la aplicación:', error);
         
         const loadingMessage = document.createElement('div');
-        loadingMessage.style = 'position:fixed;top:0;left:0;width:100%;height:100%;background:white;display:flex;align-items:center;justify-content:center;color:red;font-weight:bold;text-align:center;padding:20px;z-index:9999;';
+        loadingMessage.style = 'position:fixed;top:0;left:0;width:100%;height:100%;background:white;display:flex;align-items:center;justify-content:center;color:red;font-weight:bold;text-align:center;padding:20px;z-index:9999';
         loadingMessage.textContent = 'ERROR DE INICIALIZACIÓN: No se pudo cargar la configuración de la tienda. Revisa la consola para más detalles (Faltan variables de entorno en Vercel).';
         document.body.appendChild(loadingMessage);
     }
 };
-
 
 document.addEventListener('DOMContentLoaded', loadConfigAndInitSupabase);

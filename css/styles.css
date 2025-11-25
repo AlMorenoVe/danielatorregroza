@@ -40,7 +40,7 @@ body {
   box-shadow: var(--shadow);
 }
 
-/* Nueva Barra de Navegación */
+/* Nueva Barra de Navegación (logo + texto) */
 .navbar {
   display: flex;
   justify-content: space-between;
@@ -56,11 +56,31 @@ body {
 }
 
 .logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-img {
+  width: 42px;
+  height: 42px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.logo-text {
   font-size: 1.8rem;
   letter-spacing: 4px;
   color: var(--primary);
+  font-weight: 700;
 }
 
+/* On mobile, hide the textual h1 and only show logo image */
+@media (max-width: 420px) {
+  .logo-text { display: none; }
+}
+
+/* Search and cart */
 .search-container {
   flex-grow: 1;
   margin: 0 1rem;
@@ -152,6 +172,38 @@ body {
   background: var(--primary);
 }
 
+/* Collage Section (first section) */
+.collage-section {
+  padding: 10px;
+  margin-top: 64px; /* to avoid overlap with navbar */
+}
+
+.collage-grid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.collage-item {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* We'll set inline styles for width/height to get random sizes; provide default sizing constraints */
+.collage-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 /* ESTILOS DE MODAL */
 .modal {
   display: none;
@@ -188,6 +240,35 @@ body {
   padding: 0;
   max-width: 680px;
   overflow: hidden;
+}
+
+/* form hint for required selections */
+.modal-required-hint {
+  color: #d43f3f;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 4px;
+  margin-bottom: 6px;
+  display: none;
+}
+
+/* when shown */
+.modal-required-hint.show {
+  display: block;
+}
+
+/* pulse animation to emphasize required fields */
+@keyframes requiredPulse {
+  0% { box-shadow: 0 0 0 0 rgba(212,63,63,0.12); }
+  50% { box-shadow: 0 0 12px 6px rgba(212,63,63,0.08); transform: translateY(-2px); }
+  100% { box-shadow: 0 0 0 0 rgba(212,63,63,0); transform: translateY(0); }
+}
+
+/* class applied to selects to indicate required */
+.required-pulse {
+  animation: requiredPulse 640ms ease-in-out;
+  border: 1.6px solid rgba(212,63,63,0.9);
+  border-radius: 6px;
 }
 
 /* Categories Carousel */
@@ -268,7 +349,7 @@ body {
   gap: 10px;
 }
 
-/* Product Card */
+/* Product Card (price alignment + fixed description) */
 .product-card {
   background: var(--card-bg);
   border-radius: var(--radius);
@@ -277,8 +358,10 @@ body {
   display: flex;
   flex-direction: column;
   cursor: default;
+  height: 100%;
 }
 
+/* ensure images keep aspect ratio */
 .product-image {
   width: 100%;
   height: 160px;
@@ -286,29 +369,35 @@ body {
   cursor: pointer;
 }
 
+/* product-info takes available space so price can stay at bottom */
 .product-info {
   padding: 10px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-}
-
-.product-name {
-  color: var(--primary);
-  font-size: 0.98rem;
-}
-
-.product-description {
-  font-size: .86rem;
-  color: #666;
   flex: 1;
 }
 
+/* fixed-height description with ellipsis using line-clamp for robust truncation */
+.product-description {
+  font-size: .86rem;
+  color: #666;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3; /* show at most 3 lines */
+  -webkit-box-orient: vertical;
+  line-height: 1.15rem;
+}
+
+/* ensure price is positioned at the bottom */
 .product-price {
   font-weight: 700;
   color: var(--accent);
   font-size: 1rem;
+  margin-top: auto; /* push price to bottom of product-info */
 }
+
+/* ...rest of styles unchanged (kept from original) ... */
 
 .modal-close {
   position: absolute;
@@ -466,8 +555,8 @@ body {
     height: 380px;
   }
 
-  .logo {
-    font-size: 1.5rem;
+  .logo-text {
+    font-size: 1.2rem;
   }
 
   #search-input {
@@ -496,7 +585,7 @@ body {
   }
 
   .logo {
-    display: none;
+    gap: 6px;
   }
 }
 
@@ -572,7 +661,8 @@ body {
   color: #333;
 }
 
-.form-group input {
+.form-group input,
+.form-group select {
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 6px;
@@ -750,13 +840,11 @@ body {
   margin-top: 1rem;
 }
 
-/* ======================
-   Add-to-cart toast styles
-   ====================== */
+/* Add-to-cart toast */
 .add-to-cart-toast {
   position: fixed;
   right: 16px;
-  bottom: 84px; /* por encima del install-banner y del botón del carrito */
+  bottom: 84px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -775,19 +863,16 @@ body {
   overflow: hidden;
 }
 
-/* Estado visible */
 .add-to-cart-toast.show {
   transform: translateY(0) scale(1);
   opacity: 1;
 }
 
-/* Estado de salida */
 .add-to-cart-toast.hide {
   transform: translateY(12px) scale(0.98);
   opacity: 0;
 }
 
-/* Imagen pequeña dentro del toast */
 .add-to-cart-toast .toast-img {
   width: 48px;
   height: 48px;
@@ -797,7 +882,6 @@ body {
   background: #f3f3f3;
 }
 
-/* Texto dentro del toast */
 .add-to-cart-toast .toast-text {
   display: flex;
   flex-direction: column;
@@ -820,7 +904,6 @@ body {
   color: #e6e6e6;
 }
 
-/* Soporte para reducir movimiento */
 @media (prefers-reduced-motion: reduce) {
   .add-to-cart-toast,
   .add-to-cart-toast.show,
@@ -829,7 +912,6 @@ body {
   }
 }
 
-/* Ajustes en pantallas pequeñas (no solapar inputs) */
 @media (max-width: 420px) {
   .add-to-cart-toast {
     left: 12px;
@@ -856,7 +938,7 @@ body {
   border-radius: 10px 10px 0 0; /* coincide con la tarjeta */
 }
 
-/* El hint: por defecto oculto, aparece con una animación fundida/pulse */
+/* image hint for product cards */
 .image-hint {
   position: absolute;
   left: 50%;
@@ -877,20 +959,17 @@ body {
   z-index: 8;
 }
 
-/* Icono dentro del hint (usa FontAwesome ya cargado) */
 .image-hint i {
   font-size: 1rem;
   color: #fff;
 }
 
-/* Clase que activa la animación "fundida/pulse" temporal */
 .image-hint.show-hint {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);
   animation: hint-pulse 1100ms ease-in-out 1;
 }
 
-/* Si el usuario pasa el cursor o toca la imagen, mostramos el hint (interacción) */
 .image-wrap:hover .image-hint,
 .image-wrap:focus-within .image-hint {
   opacity: 1;
@@ -898,27 +977,13 @@ body {
   transition-duration: 160ms;
 }
 
-/* animación suave tipo fade + pequeño movimiento */
 @keyframes hint-pulse {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -42%) scale(0.96);
-  }
-  20% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.02);
-  }
-  60% {
-    opacity: 1;
-    transform: translate(-50%, -52%) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -62%) scale(0.98);
-  }
+  0% { opacity: 0; transform: translate(-50%, -42%) scale(0.96); }
+  20% { opacity: 1; transform: translate(-50%, -50%) scale(1.02); }
+  60% { opacity: 1; transform: translate(-50%, -52%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -62%) scale(0.98); }
 }
 
-/* Responsive: asegurar que no tape elementos importantes en móviles */
 @media (max-width: 420px) {
   .image-hint {
     font-size: 0.8rem;
@@ -927,7 +992,6 @@ body {
   .image-hint i { font-size: 0.92rem; }
 }
 
-/* Evitar movimientos para usuarios que prefieren reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .image-hint,
   .image-hint.show-hint {
