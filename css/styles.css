@@ -277,7 +277,6 @@ body {
   display: flex;
   flex-direction: column;
   cursor: default;
-  height: 100%;
 }
 
 .product-image {
@@ -292,7 +291,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  flex: 1;
 }
 
 .product-name {
@@ -303,19 +301,13 @@ body {
 .product-description {
   font-size: .86rem;
   color: #666;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 3; /* show at most 3 lines */
-  -webkit-box-orient: vertical;
-  line-height: 1.15rem;
+  flex: 1;
 }
 
-/* ensure price is positioned at the bottom */
 .product-price {
   font-weight: 700;
   color: var(--accent);
   font-size: 1rem;
-  margin-top: auto; /* push price to bottom of product-info */
 }
 
 .modal-close {
@@ -942,102 +934,4 @@ body {
     animation: none;
     transition: none;
   }
-}
-
-/* ======================
-   Ajustes específicos para COLLAGE y botones de tallas/colores
-   ====================== */
-
-/* Collage: área cuadrada que contiene un grid "mosaic" */
-.collage-section {
-  padding: 8px 12px;
-}
-
-.collage-grid {
-  width: 100%;
-  aspect-ratio: 1/1; /* mantiene el contenedor cuadrado */
-  display: grid;
-  gap: 4px;
-  grid-auto-rows: 1fr;
-  grid-auto-flow: dense;
-  grid-template-columns: repeat(6, 1fr);
-}
-
-@media (max-width: 1100px) {
-  .collage-grid { grid-template-columns: repeat(5, 1fr); }
-}
-@media (max-width: 900px) {
-  .collage-grid { grid-template-columns: repeat(4, 1fr); }
-}
-@media (max-width: 600px) {
-  .collage-grid { grid-template-columns: repeat(3, 1fr); }
-}
-
-/* tiles: sin borde para encajar perfectamente */
-.collage-item {
-  overflow: hidden;
-  border-radius: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
-  background: #f3f3f3;
-}
-.collage-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-/* opción-talla/color como botones en modal */
-.options-row {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-top: 6px;
-}
-
-.option-btn {
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-  background: #fff;
-  cursor: pointer;
-  font-weight: 600;
-  color: var(--accent);
-  min-width: 48px;
-  text-align: center;
-}
-
-.option-btn.selected,
-.option-btn[aria-pressed="true"] {
-  background: var(--primary);
-  color: #fff;
-  border-color: var(--primary);
-  box-shadow: 0 6px 14px rgba(39,105,244,0.12);
-}
-
-/* indicador de required (pulse) en grupo de opciones */
-.options-row.required-pulse {
-  animation: requiredPulse 640ms ease-in-out;
-}
-
-@keyframes requiredPulse {
-  0% { box-shadow: 0 0 0 0 rgba(212,63,63,0.12); }
-  50% { box-shadow: 0 0 12px 6px rgba(212,63,63,0.08); transform: translateY(-2px); }
-  100% { box-shadow: 0 0 0 0 rgba(212,63,63,0); transform: translateY(0); }
-}
-
-/* modal hint for required selections */
-.modal-required-hint {
-  color: #d43f3f;
-  font-weight: 600;
-  text-align: center;
-  margin-top: 6px;
-  margin-bottom: 6px;
-  display: none;
-}
-.modal-required-hint.show {
-  display: block;
 }

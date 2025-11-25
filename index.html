@@ -13,7 +13,7 @@
     <link rel="canonical" href="https://dondepeter.vercel.app/" />
 
     <!-- SEO Open Graph (para WhatsApp, Facebook, etc.) -->
-    <meta property="og:title" content="Menú Digital Comida Rápida | Comida Rápida en Bucaramanga" />
+    <meta property="og:title" content="Menú Digital | Comida Rápida en Bucaramanga" />
     <meta property="og:description" content="Pide las mejores hamburguesas, perros calientes y más. ¡Consulta nuestro menú y haz tu pedido a domicilio!" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://dondepeter.vercel.app/" />
@@ -137,11 +137,6 @@
             </div>
         </nav>
 
-        <!-- COLLAGE: colocado justo después de categorías y antes de destacados -->
-        <section id="collage-section" class="collage-section">
-            <div id="collage-grid" class="collage-grid" aria-hidden="false"></div>
-        </section>
-
         <main class="menu-container">
             <section id="filtered-section" class="menu-section" style="display:none;">
                 <h2 id="search-results-title" class="section-title">Resultados</h2>
@@ -157,7 +152,7 @@
 
             <section id="ads-section" class="ads-section">
             <div class="ads-grid">
-                <img src="https://ndqzyplsiqigsynweihk.supabase.co/storage/v1/object/public/donde_peter/baner/favicon.png" alt="Publicidad" class="ad-image" />
+                <img src="https://ndqzyplsiqigsynweihk.supabase.co/storage/v1/object/public/donde_peter/baner/favicon.png" alt="Publicidad 2"class="ad-image" data-product-id="728b36cf-6b4d-4f50-8c99-ccde786cf031">
             </div>
             </section>
 
@@ -180,23 +175,10 @@
                         <h3 id="modal-product-name"></h3>
                         <p id="modal-product-description"></p>
                         <p id="modal-product-price" class="price"></p>
-
-                        <!-- tallas y colores como botones -->
-                        <div class="form-group">
-                          <label>Talla (obligatorio)</label>
-                          <div id="size-options" class="options-row" role="group" aria-label="Tallas disponibles"></div>
-                        </div>
-
-                        <div class="form-group">
-                          <label>Color (obligatorio)</label>
-                          <div id="color-options" class="options-row" role="group" aria-label="Colores disponibles"></div>
-                        </div>
-
                         <div class="qty-row">
                             <label for="qty-input">Cantidad</label>
                             <input id="qty-input" type="number" min="1" value="1" />
                         </div>
-                        <div id="modal-required-hint" class="modal-required-hint" aria-hidden="true">Seleccione talla y color para continuar</div>
                         <button id="modal-add-to-cart-btn" class="add-to-cart-btn">Añadir al carrito</button>
                     </div>
                 </div>
