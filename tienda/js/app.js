@@ -361,7 +361,7 @@ const generateCategoryCarousel = () => {
     categories.forEach(c => {
         const el = document.createElement('div');
         el.className = 'category-item';
-        const fileName = `https://ndqzyplsiqigsynweihk.supabase.co/storage/v1/object/public/donde_peter/icons/${c.label.toLowerCase().replace(/\s+/g, '_')}.webp`;
+        const fileName = `img/icons/${c.label.toLowerCase().replace(/\s+/g, '_')}.webp`;
         el.innerHTML = `<img class="category-image" src="${fileName}" alt="${c.label}" data-category="${c.label}"><span class="category-name">${c.label}</span>`;
         categoryCarousel.appendChild(el);
     });
